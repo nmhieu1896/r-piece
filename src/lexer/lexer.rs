@@ -28,19 +28,35 @@ impl Lexer {
         self.position = self.read_position;
         self.read_position += 1;
     }
+    pub fn read_peek(&self) -> char {
+        if self.read_position >= self.input.len() {
+            return '\0';
+        } else {
+            return self.input.chars().nth(self.read_position).unwrap();
+        }
+    }
 
     pub fn next_token(&mut self) -> TOKEN {
         // println!("ch: {:?}", self.ch);
-        let mut keep_reading = true;
         self.skip_white_space();
+
         let token = match self.ch {
-            // SKIP white space;
-            // c if c == ' ' || c == '\t' || c == '\n' || c == '\r' => {
-            //     self.read_char();
-            //     self.next_token()
-            // }
+            '=' if self.read_peek() == '=' => {
+                self.read_char();
+                TOKEN::EQ
+            }
             '=' => TOKEN::ASSIGN,
             '+' => TOKEN::PLUS,
+            '-' => TOKEN::MINUS,
+            '!' if self.read_peek() == '=' => {
+                self.read_char();
+                TOKEN::NOT_EQ
+            }
+            '!' => TOKEN::BANG,
+            '*' => TOKEN::ASTERISK,
+            '/' => TOKEN::SLASH,
+            '>' => TOKEN::GT,
+            '<' => TOKEN::LT,
             ',' => TOKEN::COMMA,
             ';' => TOKEN::SEMICOLON,
             '(' => TOKEN::LPAREN,
@@ -50,22 +66,18 @@ impl Lexer {
             '\0' => TOKEN::EOF,
             c if is_letter(c) => {
                 let str = self.read_identifier();
-                // println!("str: {:?}", str);
-                keep_reading = false;
                 if KEYWORDS.contains_key(str.as_str()) {
                     return KEYWORDS.get(str.as_str()).unwrap().clone();
                 }
-                TOKEN::IDENT(str)
+                return TOKEN::IDENT(str);
             }
             c if c.is_digit(10) => {
-                keep_reading = false;
                 return TOKEN::INT(self.read_number());
             }
             c => TOKEN::ILLEGAL(c),
         };
-        if keep_reading {
-            self.read_char();
-        }
+
+        self.read_char();
         return token;
     }
 
@@ -113,6 +125,17 @@ mod tests {
             x + y;
           };
           let result = add(five, ten);
+          !-/*6;
+          7 < 10 > 8;
+
+          if (9 < 11) {
+            return true;
+          } else {
+            return false;
+          }
+
+          13 == 13;
+          14 != 5;
         "#;
 
         let tokens = vec![
@@ -151,6 +174,43 @@ mod tests {
             TOKEN::COMMA,
             TOKEN::IDENT("ten".to_string()),
             TOKEN::RPAREN,
+            TOKEN::SEMICOLON,
+            TOKEN::BANG,
+            TOKEN::MINUS,
+            TOKEN::SLASH,
+            TOKEN::ASTERISK,
+            TOKEN::INT(6),
+            TOKEN::SEMICOLON,
+            TOKEN::INT(7),
+            TOKEN::LT,
+            TOKEN::INT(10),
+            TOKEN::GT,
+            TOKEN::INT(8),
+            TOKEN::SEMICOLON,
+            TOKEN::IF,
+            TOKEN::LPAREN,
+            TOKEN::INT(9),
+            TOKEN::LT,
+            TOKEN::INT(11),
+            TOKEN::RPAREN,
+            TOKEN::LBRACE,
+            TOKEN::RETURN,
+            TOKEN::TRUE,
+            TOKEN::SEMICOLON,
+            TOKEN::RBRACE,
+            TOKEN::ELSE,
+            TOKEN::LBRACE,
+            TOKEN::RETURN,
+            TOKEN::FALSE,
+            TOKEN::SEMICOLON,
+            TOKEN::RBRACE,
+            TOKEN::INT(13),
+            TOKEN::EQ,
+            TOKEN::INT(13),
+            TOKEN::SEMICOLON,
+            TOKEN::INT(14),
+            TOKEN::NOT_EQ,
+            TOKEN::INT(5),
             TOKEN::SEMICOLON,
             TOKEN::EOF,
         ];

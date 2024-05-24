@@ -14,6 +14,14 @@ pub enum TOKEN {
     ASSIGN,
     PLUS,
     MINUS,
+    BANG,     // !
+    ASTERISK, // *
+    SLASH,    // /
+
+    GT,     // >
+    LT,     // <
+    EQ,     // ==
+    NOT_EQ, // !=
 
     //Delimeters
     COMMA,
@@ -26,6 +34,11 @@ pub enum TOKEN {
     // keywords
     FUNCTION,
     LET,
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN,
 }
 
 lazy_static! {
@@ -33,6 +46,11 @@ lazy_static! {
         let mut m = HashMap::new();
         m.insert("fn", TOKEN::FUNCTION);
         m.insert("let", TOKEN::LET);
+        m.insert("true", TOKEN::TRUE);
+        m.insert("false", TOKEN::FALSE);
+        m.insert("if", TOKEN::IF);
+        m.insert("else", TOKEN::ELSE);
+        m.insert("return", TOKEN::RETURN);
         m
     };
 }
