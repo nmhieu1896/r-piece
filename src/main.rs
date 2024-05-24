@@ -1,3 +1,7 @@
+mod lexer;
+mod repl;
+use repl::repl::run_repl;
+
 fn main() {
-    println!("Hello, world!");
+    run_repl();
 }

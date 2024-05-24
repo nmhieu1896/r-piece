@@ -1,4 +1,5 @@
-mod lexer;
+pub mod lexer;
+pub mod repl;
 
 use lexer::lexer::Lexer;
 
