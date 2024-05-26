@@ -42,38 +42,30 @@ impl Parser {
 
     pub fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token {
-            TOKEN::LET => {
-                let stmt = self.parse_let_statement();
-                return Some(Box::new(stmt));
-            }
+            TOKEN::LET => Some(Box::new(self.parse_let_statement())),
             _ => None,
         }
     }
 
     pub fn parse_let_statement(&mut self) -> LetStatement {
         let mut stmt = LetStatement::new(TOKEN::LET);
-
-        if !self.expect_peek(TOKEN::IDENT(String::new())) {
+        // get IDENT
+        if !self.peek_token.is_same_with(TOKEN::IDENT(String::new())) {
             panic!("LET must be followed by IDENT");
         }
         stmt.name = Some(self.peek_token.literal());
 
-        if !self.expect_peek(TOKEN::ASSIGN) {
+        // get ASSIGN
+        self.next_token();
+        if !self.peek_token.is_same_with(TOKEN::ASSIGN) {
             panic!("IDENTIFIER must be followed by =");
         }
+
         while !self.cur_token.is_same_with(TOKEN::SEMICOLON) {
             self.next_token();
         }
 
         return stmt;
-    }
-
-    fn expect_peek(&mut self, t: TOKEN) -> bool {
-        if !self.peek_token.is_same_with(t) {
-            return false;
-        }
-        self.next_token();
-        return true;
     }
 }
 
@@ -94,7 +86,7 @@ mod tests {
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
-        println!("{:?}", program);
+        println!("{:#?}", program);
         assert_eq!(program.statements.len(), 3);
     }
 }
