@@ -1,18 +1,16 @@
+use std::{iter::Peekable, str::Chars};
+
 use super::token::{KEYWORDS, TOKEN};
 
-pub struct Lexer {
-    input: String,
-    position: usize,      //current position in input
-    read_position: usize, //current reading position in input
+pub struct Lexer<'a> {
+    input: Peekable<Chars<'a>>,
     ch: char,
 }
 
-impl Lexer {
-    pub fn new(input: String) -> Lexer {
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a String) -> Lexer<'a> {
         let mut l = Lexer {
-            input,
-            position: 0,
-            read_position: 0,
+            input: input.chars().peekable(),
             ch: '\0',
         };
         l.read_char();
@@ -20,35 +18,29 @@ impl Lexer {
     }
 
     pub fn read_char(&mut self) {
-        if self.read_position >= self.input.len() {
-            self.ch = '\0';
+        self.ch = if self.input.peek().is_none() {
+            '\0'
         } else {
-            self.ch = self.input.chars().nth(self.read_position).unwrap();
+            self.input.next().unwrap()
         }
-        self.position = self.read_position;
-        self.read_position += 1;
     }
-    pub fn read_peek(&self) -> char {
-        if self.read_position >= self.input.len() {
-            return '\0';
-        } else {
-            return self.input.chars().nth(self.read_position).unwrap();
-        }
+    pub fn read_peek(&mut self) -> char {
+        self.input.peek().unwrap_or(&'\0').clone()
     }
 
     pub fn next_token(&mut self) -> TOKEN {
         // println!("ch: {:?}", self.ch);
         self.skip_white_space();
-
+        let peek = self.read_peek();
         let token = match self.ch {
-            '=' if self.read_peek() == '=' => {
+            '=' if peek == '=' => {
                 self.read_char();
                 TOKEN::EQ
             }
             '=' => TOKEN::ASSIGN,
             '+' => TOKEN::PLUS,
             '-' => TOKEN::MINUS,
-            '!' if self.read_peek() == '=' => {
+            '!' if peek == '=' => {
                 self.read_char();
                 TOKEN::NOT_EQ
             }
@@ -136,7 +128,8 @@ mod tests {
 
           13 == 13;
           14 != 5;
-        "#;
+        "#
+        .to_string();
 
         let tokens = vec![
             TOKEN::LET,
@@ -214,7 +207,7 @@ mod tests {
             TOKEN::SEMICOLON,
             TOKEN::EOF,
         ];
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(&input);
 
         for token in tokens.iter() {
             assert_eq!(l.next_token(), *token);

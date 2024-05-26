@@ -3,13 +3,13 @@ use crate::{
     lexer::{lexer::Lexer, token::TOKEN},
 };
 
-struct Parser {
-    l: Lexer,
+struct Parser<'a> {
+    l: Lexer<'a>,
     cur_token: TOKEN,
     peek_token: TOKEN,
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     pub fn new(l: Lexer) -> Parser {
         let mut p = Parser {
             l,
@@ -83,7 +83,7 @@ mod tests {
           "#
         .to_string();
 
-        let l = Lexer::new(input);
+        let l = Lexer::new(&input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
         println!("{:#?}", program);

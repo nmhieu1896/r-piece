@@ -19,7 +19,7 @@ pub fn run_repl() {
             break;
         }
 
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(&input);
 
         loop {
             match l.next_token() {
