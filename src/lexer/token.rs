@@ -19,10 +19,10 @@ pub enum TOKEN {
     ASTERISK, // *
     SLASH,    // /
 
-    GT,     // >
-    LT,     // <
-    EQ,     // ==
-    NOT_EQ, // !=
+    GT,    // >
+    LT,    // <
+    EQ,    // ==
+    NotEQ, // !=
 
     //Delimeters
     COMMA,
@@ -54,7 +54,7 @@ impl TOKEN {
             TOKEN::GT => String::from(">"),
             TOKEN::LT => String::from("<"),
             TOKEN::EQ => String::from("=="),
-            TOKEN::NOT_EQ => String::from("!="),
+            TOKEN::NotEQ => String::from("!="),
             TOKEN::COMMA => String::from(","),
             TOKEN::SEMICOLON => String::from(";"),
             TOKEN::LPAREN => String::from("("),
@@ -67,6 +67,31 @@ impl TOKEN {
             TOKEN::IDENT(s) => s.to_string(),
             TOKEN::INT(n) => n.to_string(),
             _ => String::from(""),
+        }
+    }
+    pub fn to_type_name(&self) -> String {
+        match self {
+            TOKEN::ASSIGN => String::from("="),
+            TOKEN::PLUS => String::from("+"),
+            TOKEN::MINUS => String::from("-"),
+            TOKEN::BANG => String::from("!"),
+            TOKEN::ASTERISK => String::from("*"),
+            TOKEN::SLASH => String::from("/"),
+            TOKEN::GT => String::from(">"),
+            TOKEN::LT => String::from("<"),
+            TOKEN::EQ => String::from("=="),
+            TOKEN::NotEQ => String::from("!="),
+            TOKEN::COMMA => String::from(","),
+            TOKEN::SEMICOLON => String::from(";"),
+            TOKEN::LPAREN => String::from("("),
+            TOKEN::RPAREN => String::from(")"),
+            TOKEN::LBRACE => String::from("{"),
+            TOKEN::RBRACE => String::from("}"),
+            TOKEN::EOF => String::from("EOF"),
+            //
+            TOKEN::IDENT(_) => String::from("IDENT"),
+            TOKEN::INT(n) => String::from("INT"),
+            _ => String::from("ILLEGAL"),
         }
     }
 

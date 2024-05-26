@@ -1,5 +1,6 @@
 use super::token::{KEYWORDS, TOKEN};
 
+#[derive(Debug, Clone)]
 pub struct Lexer {
     input: String,
     position: usize,      //current position in input
@@ -50,7 +51,7 @@ impl Lexer {
             '-' => TOKEN::MINUS,
             '!' if self.read_peek() == '=' => {
                 self.read_char();
-                TOKEN::NOT_EQ
+                TOKEN::NotEQ
             }
             '!' => TOKEN::BANG,
             '*' => TOKEN::ASTERISK,
@@ -209,7 +210,7 @@ mod tests {
             TOKEN::INT(13),
             TOKEN::SEMICOLON,
             TOKEN::INT(14),
-            TOKEN::NOT_EQ,
+            TOKEN::NotEQ,
             TOKEN::INT(5),
             TOKEN::SEMICOLON,
             TOKEN::EOF,

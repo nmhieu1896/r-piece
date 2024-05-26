@@ -4,19 +4,21 @@ pub mod parser;
 pub mod repl;
 
 use lexer::lexer::Lexer;
+use parser::parser::Parser;
 
-// pub fn _run() {
-//     let input = r#"
-//   let five = 5;
-//   let ten = 10;
-//   let add = fn(x, y) {
-//     x + y;
-//   };
-//   let result = add(five, ten);
-//   !-/*5;
-//   5 < 10 > 5;
-// "#;
+pub fn _run() {
+    let input = r#"
+  let five = 5;
+  let ten = 10;
+  let add = fn(x, y) {
+    x + y;
+  };
+  let result = add(five, ten);
+  !-/*5;
+  5 < 10 > 5;
+"#;
 
-//     let mut l = Lexer::new(input.to_string());
-//     println!("{:?}", l.next_token());
-// }
+    let l = Lexer::new(input.to_string());
+    let mut p = Parser::new(l);
+    println!("{:?}", p.parse_program());
+}

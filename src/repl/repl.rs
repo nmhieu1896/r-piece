@@ -1,6 +1,9 @@
 use std::io::{self, Write};
 
-use crate::lexer::{lexer::Lexer, token::TOKEN};
+use crate::{
+    lexer::{lexer::Lexer, token::TOKEN},
+    parser::parser::Parser,
+};
 
 pub fn run_repl() {
     println!("Welcome to the REPL CLI. Type 'exit' to quit.");
@@ -20,6 +23,7 @@ pub fn run_repl() {
         }
 
         let mut l = Lexer::new(input.to_string());
+        let mut p = Parser::new(l.clone());
 
         loop {
             match l.next_token() {
@@ -27,6 +31,7 @@ pub fn run_repl() {
                 tk => println!("{:?}", tk),
             }
         }
+        println!("{:#?}", p.parse_program());
     }
 
     println!("Exit REPL!");

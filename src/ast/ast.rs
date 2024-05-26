@@ -2,16 +2,16 @@ use std::fmt::Debug;
 
 use crate::lexer::token::TOKEN;
 
-trait Node {
+pub trait Node: Debug {
     fn token_literal(&self) -> String;
     // fn string(&self) -> String;
 }
 
-pub trait Statement: Node + Debug {
+pub trait Statement: Node {
     fn statement_node(&self);
 }
 
-trait Expression: Node + Debug {
+pub trait Expression: Node {
     fn expression_node(&self);
 }
 
@@ -37,7 +37,7 @@ impl Node for Program {
 pub struct LetStatement {
     pub token: TOKEN,
     pub name: Option<String>, // if name is IDENT(string) => Some(String) else None
-    pub value: Option<Box<dyn Expression>>,
+    value: Option<Box<dyn Expression>>,
 }
 impl LetStatement {
     pub fn new(token: TOKEN) -> Self {
@@ -53,6 +53,28 @@ impl Statement for LetStatement {
     fn statement_node(&self) {}
 }
 impl Node for LetStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal()
+    }
+}
+
+#[derive(Debug)]
+pub struct ExpressionStatement {
+    pub token: TOKEN,
+    pub expression: Option<Box<dyn Expression>>,
+}
+impl ExpressionStatement {
+    pub fn new(token: TOKEN) -> Self {
+        Self {
+            token,
+            expression: None,
+        }
+    }
+}
+impl Statement for ExpressionStatement {
+    fn statement_node(&self) {}
+}
+impl Node for ExpressionStatement {
     fn token_literal(&self) -> String {
         self.token.literal()
     }
