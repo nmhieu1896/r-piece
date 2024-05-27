@@ -1,34 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
-    ast::ast::{Expression, ExpressionStatement, LetStatement, Node, Program, Statement},
+    ast::ast::{
+        Expression, ExpressionStatement, LetStatement, Node, PrefixExpression, Program, Statement,
+    },
     lexer::{lexer::Lexer, token::TOKEN},
 };
-
-// So that we cant use String as "Identifier"
-// And identifier is String and is a type of Expression
-impl Expression for String {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    fn expression_node(&self) {}
-}
-impl Node for String {
-    fn token_literal(&self) -> String {
-        self.clone()
-    }
-}
-impl Expression for i64 {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    fn expression_node(&self) {}
-}
-impl Node for i64 {
-    fn token_literal(&self) -> String {
-        self.to_string()
-    }
-}
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
 type InfixParseFn = fn(&mut Parser, Box<dyn Expression>) -> Option<Box<dyn Expression>>;
@@ -63,12 +40,11 @@ impl Parser {
             infix_parse_fns: HashMap::new(),
         };
         //
-        p.prefix_parse_fns.insert(
-            TOKEN::IDENT(String::new()).to_type_name(),
-            Parser::parse_identifier,
-        );
-        p.prefix_parse_fns
-            .insert(TOKEN::INT(0).to_type_name(), Parser::parse_int_literal);
+        p.register_prefix(TOKEN::IDENT(String::new()), Parser::parse_identifier);
+        p.register_prefix(TOKEN::INT(0), Parser::parse_int_literal);
+        p.register_prefix(TOKEN::BANG, Parser::parse_prefix_expression);
+        p.register_prefix(TOKEN::MINUS, Parser::parse_prefix_expression);
+
         //Read two token so current token and peek token are both set
         p.next_token();
         p.next_token();
@@ -127,7 +103,7 @@ impl Parser {
                 "Expected next token to be IDENT, got {:?}",
                 self.peek_token
             ));
-            return None;
+            // return None;
         }
         stmt.name = Some(self.peek_token.literal());
 
@@ -138,7 +114,7 @@ impl Parser {
                 "Expected next token to be ASSIGN, got {:?}",
                 self.peek_token
             ));
-            return None;
+            // return None;
         }
 
         while !self.cur_token.is_same_with(TOKEN::SEMICOLON) {
@@ -189,20 +165,34 @@ impl Parser {
         self.infix_parse_fns.insert(token.to_type_name(), func);
     }
 
+    // TOKEN Parsers
     fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
         Some(Box::new(self.cur_token.literal()))
     }
     fn parse_int_literal(&mut self) -> Option<Box<dyn Expression>> {
         match self.cur_token {
             TOKEN::INT(i) => Some(Box::new(i)),
-            _ => None,
+            _ => {
+                self.errors.push(format!(
+                    "parse_int_literal: Expected next token to be INT, got {:?}",
+                    self.cur_token
+                ));
+                return None;
+            }
         }
     }
-    // fn parse_
+    fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
+        let mut expression = PrefixExpression::new(self.cur_token.clone());
+        self.next_token();
+        expression.right = self.parse_expression(Precedence::PREFIX);
+        Some(Box::new(expression))
+    }
 }
 
 #[cfg(test)]
 mod tests {
+
+    use std::ops::Deref;
 
     use super::*;
 
@@ -210,7 +200,7 @@ mod tests {
     fn test_parser() {
         let input = r#"
           let x = 5;
-          let y != 10;
+          let y = 10;
           let foobar = 838383;
           "#
         .to_string();
@@ -219,8 +209,8 @@ mod tests {
         let mut p = Parser::new(l);
         let program = p.parse_program();
         println!("{:#?}", program);
-        assert_eq!(program.statements.len(), 2);
-        assert_eq!(p.errors.len(), 1);
+        assert_eq!(program.statements.len(), 3);
+        assert_eq!(p.errors.len(), 0);
     }
 
     #[test]
@@ -262,5 +252,33 @@ mod tests {
 
         assert_eq!(program.statements.len(), 1);
         assert_eq!(p.errors.len(), 0);
+    }
+    #[test]
+    fn test_prefix_expressions() {
+        let inputs = vec![("!5;", "!", 5), ("-15;", "-", 15)];
+
+        for (input, operator, value) in inputs.into_iter() {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            println!("{:#?}", program);
+
+            let stmt = program.statements[0]
+                .as_any()
+                .downcast_ref::<ExpressionStatement>();
+            let prefix_exp = stmt
+                .unwrap()
+                .expression
+                .as_deref()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<PrefixExpression>();
+            assert_eq!(prefix_exp.unwrap().token.literal(), operator.to_string());
+            let right = prefix_exp.unwrap().right.as_deref();
+            assert_eq!(right.unwrap().token_literal(), value.to_string());
+
+            assert_eq!(program.statements.len(), 1);
+            assert_eq!(p.errors.len(), 0);
+        }
     }
 }

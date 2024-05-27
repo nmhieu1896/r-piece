@@ -39,7 +39,7 @@ impl Node for Program {
 #[derive(Debug)]
 pub struct LetStatement {
     pub token: TOKEN,
-    pub name: Option<String>, // if name is IDENT(string) => Some(String) else None
+    pub name: Option<Identifier>, // if name is IDENT(string) => Some(String) else None
     value: Option<Box<dyn Expression>>,
 }
 impl LetStatement {
@@ -88,3 +88,51 @@ impl Node for ExpressionStatement {
         self.token.literal()
     }
 }
+
+// -------------- EXPRESSION TYPE ----------------------
+pub type Identifier = String;
+impl Expression for Identifier {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for Identifier {
+    fn token_literal(&self) -> Identifier {
+        self.clone()
+    }
+}
+pub type Integer = i64;
+impl Expression for Integer {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for Integer {
+    fn token_literal(&self) -> String {
+        self.to_string()
+    }
+}
+#[derive(Debug)]
+pub struct PrefixExpression {
+    pub token: TOKEN,
+    pub right: Option<Box<dyn Expression>>,
+}
+impl PrefixExpression {
+    pub fn new(token: TOKEN) -> Self {
+        Self { token, right: None }
+    }
+}
+impl Expression for PrefixExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for PrefixExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal()
+    }
+}
+// -------------- EXPRESSION TYPE ----------------------

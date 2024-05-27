@@ -2,14 +2,16 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::mem::discriminant;
 
+use crate::ast::ast::{Identifier, Integer};
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum TOKEN {
     EOF,
     ILLEGAL(char),
 
     // Identifiers + literals
-    IDENT(String),
-    INT(i64),
+    IDENT(Identifier),
+    INT(Integer),
 
     // Operators
     ASSIGN,
@@ -64,7 +66,7 @@ impl TOKEN {
             TOKEN::EOF => String::from("EOF"),
             //
             TOKEN::ILLEGAL(c) => String::from(*c),
-            TOKEN::IDENT(s) => s.to_string(),
+            TOKEN::IDENT(s) => s.clone(),
             TOKEN::INT(n) => n.to_string(),
             _ => String::from(""),
         }
