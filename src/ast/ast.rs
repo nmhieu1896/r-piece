@@ -4,14 +4,17 @@ use crate::lexer::token::TOKEN;
 
 pub trait Node: Debug {
     fn token_literal(&self) -> String;
+
     // fn string(&self) -> String;
 }
 
 pub trait Statement: Node {
+    fn as_any(&self) -> &dyn std::any::Any;
     fn statement_node(&self);
 }
 
 pub trait Expression: Node {
+    fn as_any(&self) -> &dyn std::any::Any;
     fn expression_node(&self);
 }
 
@@ -50,6 +53,9 @@ impl LetStatement {
 }
 
 impl Statement for LetStatement {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn statement_node(&self) {}
 }
 impl Node for LetStatement {
@@ -72,6 +78,9 @@ impl ExpressionStatement {
     }
 }
 impl Statement for ExpressionStatement {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn statement_node(&self) {}
 }
 impl Node for ExpressionStatement {

@@ -90,7 +90,7 @@ impl TOKEN {
             TOKEN::EOF => String::from("EOF"),
             //
             TOKEN::IDENT(_) => String::from("IDENT"),
-            TOKEN::INT(n) => String::from("INT"),
+            TOKEN::INT(_) => String::from("INT"),
             _ => String::from("ILLEGAL"),
         }
     }

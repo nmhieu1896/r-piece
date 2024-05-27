@@ -5,7 +5,12 @@ use crate::{
     lexer::{lexer::Lexer, token::TOKEN},
 };
 
+// So that we cant use String as "Identifier"
+// And identifier is String and is a type of Expression
 impl Expression for String {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn expression_node(&self) {}
 }
 impl Node for String {
@@ -13,9 +18,20 @@ impl Node for String {
         self.clone()
     }
 }
+impl Expression for i64 {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for i64 {
+    fn token_literal(&self) -> String {
+        self.to_string()
+    }
+}
 
-type prefix_parse_fn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
-type infix_parse_fn = fn(&mut Parser, Box<dyn Expression>) -> Option<Box<dyn Expression>>;
+type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
+type InfixParseFn = fn(&mut Parser, Box<dyn Expression>) -> Option<Box<dyn Expression>>;
 pub enum Precedence {
     LOWEST,
     EQUALS,
@@ -32,8 +48,8 @@ pub struct Parser {
     errors: Vec<String>,
     cur_token: TOKEN,
     peek_token: TOKEN,
-    prefix_parse_fns: HashMap<String, prefix_parse_fn>,
-    infix_parse_fns: HashMap<String, infix_parse_fn>,
+    prefix_parse_fns: HashMap<String, PrefixParseFn>,
+    infix_parse_fns: HashMap<String, InfixParseFn>,
 }
 
 impl Parser {
@@ -51,6 +67,8 @@ impl Parser {
             TOKEN::IDENT(String::new()).to_type_name(),
             Parser::parse_identifier,
         );
+        p.prefix_parse_fns
+            .insert(TOKEN::INT(0).to_type_name(), Parser::parse_int_literal);
         //Read two token so current token and peek token are both set
         p.next_token();
         p.next_token();
@@ -163,17 +181,24 @@ impl Parser {
         return left_exp;
     }
 
-    fn register_prefix(&mut self, token: TOKEN, func: prefix_parse_fn) {
+    fn register_prefix(&mut self, token: TOKEN, func: PrefixParseFn) {
         self.prefix_parse_fns.insert(token.to_type_name(), func);
     }
 
-    fn register_infix(&mut self, token: TOKEN, func: infix_parse_fn) {
+    fn register_infix(&mut self, token: TOKEN, func: InfixParseFn) {
         self.infix_parse_fns.insert(token.to_type_name(), func);
     }
 
     fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
         Some(Box::new(self.cur_token.literal()))
     }
+    fn parse_int_literal(&mut self) -> Option<Box<dyn Expression>> {
+        match self.cur_token {
+            TOKEN::INT(i) => Some(Box::new(i)),
+            _ => None,
+        }
+    }
+    // fn parse_
 }
 
 #[cfg(test)]
@@ -206,6 +231,35 @@ mod tests {
         let mut p = Parser::new(l);
         let program = p.parse_program();
         println!("{:#?}", program);
+        assert_eq!(program.statements[0].token_literal(), "foobar");
+        assert!(program.statements[0].as_any().is::<ExpressionStatement>());
+        let stmt = program.statements[0]
+            .as_any()
+            .downcast_ref::<ExpressionStatement>();
+
+        let exp = stmt.unwrap().expression.as_deref();
+        assert_eq!(exp.unwrap().token_literal(), "foobar".to_string());
+        assert!(exp.unwrap().as_any().is::<String>());
+        assert_eq!(program.statements.len(), 1);
+        assert_eq!(p.errors.len(), 0);
+    }
+
+    #[test]
+    fn test_int_expression() {
+        let input = "5;".to_string();
+
+        let l = Lexer::new(input);
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        println!("{:#?}", program);
+
+        let stmt = program.statements[0]
+            .as_any()
+            .downcast_ref::<ExpressionStatement>();
+        let exp = stmt.unwrap().expression.as_deref();
+        assert!(exp.unwrap().as_any().is::<i64>());
+        assert_eq!(exp.unwrap().token_literal(), "5".to_string());
+
         assert_eq!(program.statements.len(), 1);
         assert_eq!(p.errors.len(), 0);
     }
