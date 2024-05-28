@@ -4,8 +4,6 @@ use crate::lexer::token::TOKEN;
 
 pub trait Node: Debug {
     fn token_literal(&self) -> String;
-
-    // fn string(&self) -> String;
 }
 
 pub trait Statement: Node {

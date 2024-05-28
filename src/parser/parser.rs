@@ -191,9 +191,6 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-
-    use std::ops::Deref;
-
     use super::*;
 
     #[test]
@@ -265,16 +262,17 @@ mod tests {
 
             let stmt = program.statements[0]
                 .as_any()
-                .downcast_ref::<ExpressionStatement>();
+                .downcast_ref::<ExpressionStatement>()
+                .unwrap();
             let prefix_exp = stmt
-                .unwrap()
                 .expression
                 .as_deref()
                 .unwrap()
                 .as_any()
-                .downcast_ref::<PrefixExpression>();
-            assert_eq!(prefix_exp.unwrap().token.literal(), operator.to_string());
-            let right = prefix_exp.unwrap().right.as_deref();
+                .downcast_ref::<PrefixExpression>()
+                .unwrap();
+            assert_eq!(prefix_exp.token.literal(), operator.to_string());
+            let right = prefix_exp.right.as_deref();
             assert_eq!(right.unwrap().token_literal(), value.to_string());
 
             assert_eq!(program.statements.len(), 1);
