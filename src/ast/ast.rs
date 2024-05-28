@@ -15,6 +15,14 @@ pub trait Expression: Node {
     fn as_any(&self) -> &dyn std::any::Any;
     fn expression_node(&self);
 }
+// pub trait AsAny {
+//     fn as_any(&self) -> &dyn std::any::Any;
+// }
+// impl<T: Statement + Expression> AsAny for T {
+//     fn as_any(&self) -> &dyn std::any::Any {
+//         self
+//     }
+// }
 
 #[derive(Debug)]
 pub struct Program {
@@ -131,6 +139,33 @@ impl Expression for PrefixExpression {
 impl Node for PrefixExpression {
     fn token_literal(&self) -> String {
         self.token.literal()
+    }
+}
+
+#[derive(Debug)]
+pub struct InfixExpression {
+    pub operator: TOKEN,
+    pub left: Box<dyn Expression>,
+    pub right: Option<Box<dyn Expression>>,
+}
+impl InfixExpression {
+    pub fn new(left: Box<dyn Expression>, operator: TOKEN) -> Self {
+        Self {
+            left: left,
+            operator,
+            right: None,
+        }
+    }
+}
+impl Expression for InfixExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for InfixExpression {
+    fn token_literal(&self) -> String {
+        self.operator.literal()
     }
 }
 // -------------- EXPRESSION TYPE ----------------------
