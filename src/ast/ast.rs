@@ -86,6 +86,40 @@ impl Node for LetStatement {
 }
 
 #[derive(Debug)]
+pub struct ReturnStatement {
+    pub token: TOKEN,
+    pub expression: Option<Box<dyn Expression>>,
+}
+impl ReturnStatement {
+    pub fn new() -> Self {
+        Self {
+            token: TOKEN::RETURN,
+            expression: None,
+        }
+    }
+}
+impl Statement for ReturnStatement {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn statement_node(&self) {}
+}
+impl Node for ReturnStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("");
+        str.push_str(&self.token.literal());
+        str.push_str(" ");
+        if self.expression.is_some() {
+            str.push_str(&self.expression.as_deref().unwrap().to_str());
+        }
+        return str;
+    }
+}
+
+#[derive(Debug)]
 pub struct ExpressionStatement {
     pub token: TOKEN,
     pub expression: Option<Box<dyn Expression>>,

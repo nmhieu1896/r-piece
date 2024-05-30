@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     ast::ast::{
         Expression, ExpressionStatement, InfixExpression, LetStatement, Node, PrefixExpression,
-        Program, Statement,
+        Program, ReturnStatement, Statement,
     },
     lexer::{lexer::Lexer, token::TOKEN},
 };
@@ -151,17 +151,18 @@ impl Parser {
 
         while !self.cur_token.is_same_with(TOKEN::SEMICOLON) {
             self.next_token();
+            stmt.value = self.parse_expression_statement().unwrap().expression;
         }
 
         return Some(stmt);
     }
 
-    pub fn parse_return_statement(&mut self) -> Option<LetStatement> {
-        let stmt = LetStatement::new(TOKEN::RETURN);
+    pub fn parse_return_statement(&mut self) -> Option<ReturnStatement> {
+        let mut stmt = ReturnStatement::new();
 
-        self.next_token();
         while !self.cur_token.is_same_with(TOKEN::SEMICOLON) {
             self.next_token();
+            stmt.expression = self.parse_expression_statement().unwrap().expression;
         }
 
         return Some(stmt);

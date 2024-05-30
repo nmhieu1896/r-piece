@@ -6,8 +6,8 @@ mod tests {
 
     use crate::{
         ast::ast::{
-            Expression, ExpressionStatement, Identifier, InfixExpression, Node, PrefixExpression,
-            Statement,
+            Expression, ExpressionStatement, Identifier, InfixExpression, LetStatement, Node,
+            PrefixExpression, ReturnStatement, Statement,
         },
         lexer::lexer::Lexer,
         parser::parser::Parser,
@@ -15,19 +15,45 @@ mod tests {
 
     #[test]
     fn test_parser() {
-        let input = r#"
-          let x = 5;
-          let y = 10;
-          let foobar = 838383;
-          "#
-        .to_string();
+        let let_inputs = vec![
+            ("let x = 5+10;", "LET", "x", "(5 + 10)"),
+            ("let y = a + 10 * 2;", "LET", "y", "(a + (10 * 2))"),
+            ("let foobar = 838383;", "LET", "foobar", "838383"),
+        ];
+        let return_inputs = vec![
+            ("return 5+10;", "RETURN", "(5 + 10)"),
+            ("return a + 10 * 2;", "RETURN", "(a + (10 * 2))"),
+            ("return 838383;", "RETURN", "838383"),
+        ];
 
-        let l = Lexer::new(input);
-        let mut p = Parser::new(l);
-        let program = p.parse_program();
-        println!("{:#?}", program);
-        assert_eq!(program.statements.len(), 3);
-        assert_eq!(p.errors.len(), 0);
+        for &(input, keyword, ident, val) in let_inputs.iter() {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            assert!(program.statements[0].as_any().is::<LetStatement>());
+            let stmt = program.statements[0]
+                .as_any()
+                .downcast_ref::<LetStatement>()
+                .unwrap();
+            assert_eq!(stmt.token.literal(), keyword.to_string());
+            assert_eq!(stmt.name.clone().unwrap(), ident.to_string());
+            assert_eq!(stmt.value.as_deref().unwrap().to_str(), val.to_string());
+        }
+        for &(input, keyword, val) in return_inputs.iter() {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            assert!(program.statements[0].as_any().is::<ReturnStatement>());
+            let stmt = program.statements[0]
+                .as_any()
+                .downcast_ref::<ReturnStatement>()
+                .unwrap();
+            assert_eq!(stmt.token.literal(), keyword.to_string());
+            assert_eq!(
+                stmt.expression.as_deref().unwrap().to_str(),
+                val.to_string()
+            );
+        }
     }
 
     #[test]

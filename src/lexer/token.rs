@@ -64,6 +64,8 @@ impl TOKEN {
             TOKEN::LBRACE => String::from("{"),
             TOKEN::RBRACE => String::from("}"),
             TOKEN::EOF => String::from("EOF"),
+            TOKEN::LET => String::from("LET"),
+            TOKEN::RETURN => String::from("RETURN"),
             //
             TOKEN::ILLEGAL(c) => String::from(*c),
             TOKEN::IDENT(s) => s.clone(),
