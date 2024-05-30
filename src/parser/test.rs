@@ -2,8 +2,13 @@
 mod tests {
     // use std::ops::Deref;
 
+    use std::borrow::Borrow;
+
     use crate::{
-        ast::ast::{ExpressionStatement, InfixExpression, PrefixExpression, Statement},
+        ast::ast::{
+            Expression, ExpressionStatement, Identifier, InfixExpression, Node, PrefixExpression,
+            Statement,
+        },
         lexer::lexer::Lexer,
         parser::parser::Parser,
     };
@@ -140,19 +145,39 @@ mod tests {
     fn test_operator_precedence_parsing() {
         let tests = vec![
             ("-a * b", "((-a) * b)"),
-            // ("!-a", "(!(-a))"),
-            // ("a + b + c ", "((a + b) + c)"),
+            ("-a * 5", "((-a) * 5)"),
+            ("-5 * a", "((-5) * a)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a + b) + c)"),
+            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+            ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+            (
+                "3 + 4 * 5 == 3 * 1 + 4 * 5",
+                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            ),
+            (
+                "3 + 4 * 5 == 3 * 1 + 4 * 5",
+                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            ),
         ];
 
-        for &(str1, str2) in tests.iter() {
+        for &(str1, expected) in tests.iter() {
             let l1 = Lexer::new(str1.to_string());
             let mut p1 = Parser::new(l1);
             let program1 = p1.parse_program();
-            let l2 = Lexer::new(str2.to_string());
-            let mut p2 = Parser::new(l2);
-            let program2 = p2.parse_program();
             println!("p1: {:#?}", program1);
-            println!("p2 :{:#?}", program2);
+            let exp1 = stringnify_stmt(program1.statements);
+            assert_eq!(&exp1, expected)
         }
+    }
+
+    fn stringnify_stmt(stmts: Vec<Box<dyn Statement>>) -> String {
+        let mut str = String::new();
+        for stmt in stmts.iter() {
+            str.push_str(&stmt.to_str())
+        }
+        return str;
     }
 }

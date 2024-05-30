@@ -4,6 +4,7 @@ use crate::lexer::token::TOKEN;
 
 pub trait Node: Debug {
     fn token_literal(&self) -> String;
+    fn to_str(&self) -> String;
 }
 
 pub trait Statement: Node {
@@ -40,13 +41,16 @@ impl Node for Program {
             "".to_string()
         }
     }
+    fn to_str(&self) -> String {
+        return String::from("PROGRAM");
+    }
 }
 
 #[derive(Debug)]
 pub struct LetStatement {
     pub token: TOKEN,
     pub name: Option<Identifier>, // if name is IDENT(string) => Some(String) else None
-    value: Option<Box<dyn Expression>>,
+    pub value: Option<Box<dyn Expression>>,
 }
 impl LetStatement {
     pub fn new(token: TOKEN) -> Self {
@@ -67,6 +71,17 @@ impl Statement for LetStatement {
 impl Node for LetStatement {
     fn token_literal(&self) -> String {
         self.token.literal()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("");
+        str.push_str(&self.token.literal());
+        str.push_str(" ");
+        str.push_str(&self.name.clone().unwrap());
+        str.push_str(" = ");
+        if self.value.is_some() {
+            str.push_str(&self.value.as_deref().unwrap().to_str());
+        }
+        return str;
     }
 }
 
@@ -93,6 +108,15 @@ impl Node for ExpressionStatement {
     fn token_literal(&self) -> String {
         self.token.literal()
     }
+    fn to_str(&self) -> String {
+        let mut str = String::new();
+        if self.expression.is_none() {
+            str.push_str(&self.token.literal());
+        } else {
+            str.push_str(&self.expression.as_deref().unwrap().to_str());
+        }
+        return str;
+    }
 }
 
 // -------------- EXPRESSION TYPE ----------------------
@@ -104,10 +128,14 @@ impl Expression for Identifier {
     fn expression_node(&self) {}
 }
 impl Node for Identifier {
+    fn to_str(&self) -> String {
+        self.clone()
+    }
     fn token_literal(&self) -> Identifier {
         self.clone()
     }
 }
+
 pub type Integer = i64;
 impl Expression for Integer {
     fn as_any(&self) -> &dyn std::any::Any {
@@ -116,6 +144,9 @@ impl Expression for Integer {
     fn expression_node(&self) {}
 }
 impl Node for Integer {
+    fn to_str(&self) -> String {
+        self.to_string()
+    }
     fn token_literal(&self) -> String {
         self.to_string()
     }
@@ -137,6 +168,13 @@ impl Expression for PrefixExpression {
     fn expression_node(&self) {}
 }
 impl Node for PrefixExpression {
+    fn to_str(&self) -> String {
+        let mut str = String::from("(");
+        str.push_str(&self.token.literal());
+        str.push_str(&self.right.as_deref().unwrap().to_str());
+        str.push(')');
+        return str;
+    }
     fn token_literal(&self) -> String {
         self.token.literal()
     }
@@ -166,6 +204,16 @@ impl Expression for InfixExpression {
 impl Node for InfixExpression {
     fn token_literal(&self) -> String {
         self.operator.literal()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("(");
+        str.push_str(&self.left.as_ref().to_str());
+        str.push_str(" ");
+        str.push_str(&self.operator.literal());
+        str.push_str(" ");
+        str.push_str(&self.right.as_deref().unwrap().to_str());
+        str.push(')');
+        return str;
     }
 }
 // -------------- EXPRESSION TYPE ----------------------

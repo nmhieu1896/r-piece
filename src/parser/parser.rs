@@ -195,6 +195,8 @@ impl Parser {
                 return left_exp;
             }
             self.next_token();
+            //cannot use infix.unwrap()(self,left_exp) here because of mutable borrow
+            //after next_token, peek_token become cur_token.
             left_exp = self
                 .infix_parse_fns
                 .get(&self.cur_token.to_type_name())
