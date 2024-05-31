@@ -4,6 +4,8 @@ pub mod lexer;
 pub mod parser;
 pub mod repl;
 
+pub mod utils;
+
 use lexer::lexer::Lexer;
 use parser::parser::Parser;
 

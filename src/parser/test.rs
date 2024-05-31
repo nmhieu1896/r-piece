@@ -16,7 +16,7 @@ mod tests {
     #[test]
     fn test_parser() {
         let let_inputs = vec![
-            ("let x = 5+10;", "LET", "x", "(5 + 10)"),
+            ("let x = 1+ 5 +10;", "LET", "x", "((1 + 5) + 10)"),
             ("let y = a + 10 * 2;", "LET", "y", "(a + (10 * 2))"),
             ("let foobar = 838383;", "LET", "foobar", "838383"),
         ];
@@ -30,6 +30,7 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
+            // println!("{:#?}", program);
             assert!(program.statements[0].as_any().is::<LetStatement>());
             let stmt = program.statements[0]
                 .as_any()
@@ -104,8 +105,7 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
-            println!("{:#?}", program);
-
+            // println!("{:#?}", program);
             let stmt = program.statements[0]
                 .as_any()
                 .downcast_ref::<ExpressionStatement>()
@@ -175,6 +175,7 @@ mod tests {
             ("-5 * a", "((-5) * a)"),
             ("!-a", "(!(-a))"),
             ("a + b + c", "((a + b) + c)"),
+            ("a + b * c", "(a + (b * c))"),
             ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
             ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
             ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),

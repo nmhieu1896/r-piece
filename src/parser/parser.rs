@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     ast::ast::{
         Expression, ExpressionStatement, InfixExpression, LetStatement, Node, PrefixExpression,
@@ -7,6 +5,8 @@ use crate::{
     },
     lexer::{lexer::Lexer, token::TOKEN},
 };
+
+use std::collections::HashMap;
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
 type InfixParseFn = fn(&mut Parser, Box<dyn Expression>) -> Option<Box<dyn Expression>>;
@@ -76,12 +76,19 @@ impl Parser {
         p.register_infix(TOKEN::NotEQ, Parser::parse_infix_expression);
         p.register_infix(TOKEN::LT, Parser::parse_infix_expression);
         p.register_infix(TOKEN::GT, Parser::parse_infix_expression);
-
         //Read two token so current token and peek token are both set
         p.next_token();
         p.next_token();
         return p;
     }
+    fn register_prefix(&mut self, token: TOKEN, func: PrefixParseFn) {
+        self.prefix_parse_fns.insert(token.to_type_name(), func);
+    }
+
+    fn register_infix(&mut self, token: TOKEN, func: InfixParseFn) {
+        self.infix_parse_fns.insert(token.to_type_name(), func);
+    }
+
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
         self.peek_token = self.l.next_token();
@@ -207,13 +214,6 @@ impl Parser {
         return left_exp;
     }
 
-    fn register_prefix(&mut self, token: TOKEN, func: PrefixParseFn) {
-        self.prefix_parse_fns.insert(token.to_type_name(), func);
-    }
-
-    fn register_infix(&mut self, token: TOKEN, func: InfixParseFn) {
-        self.infix_parse_fns.insert(token.to_type_name(), func);
-    }
     fn peek_precedence(&self) -> Precedence {
         Precedence::from_token(self.peek_token.clone())
     }
