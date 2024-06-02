@@ -65,8 +65,11 @@ impl Parser {
         //
         p.register_prefix(TOKEN::IDENT(String::new()), Parser::parse_identifier);
         p.register_prefix(TOKEN::INT(0), Parser::parse_int_literal);
+        p.register_prefix(TOKEN::TRUE, Parser::parse_boolean_literal);
+        p.register_prefix(TOKEN::FALSE, Parser::parse_boolean_literal);
         p.register_prefix(TOKEN::BANG, Parser::parse_prefix_expression);
         p.register_prefix(TOKEN::MINUS, Parser::parse_prefix_expression);
+        p.register_prefix(TOKEN::LPAREN, Parser::parse_group_expression);
         //
         p.register_infix(TOKEN::PLUS, Parser::parse_infix_expression);
         p.register_infix(TOKEN::MINUS, Parser::parse_infix_expression);
@@ -221,21 +224,15 @@ impl Parser {
         Precedence::from_token(self.cur_token.clone())
     }
 
-    // TOKEN Parsers
+    // ----------------- START EXPRESSION PARSERS ----------------------------
     fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
         Some(Box::new(self.cur_token.literal()))
     }
     fn parse_int_literal(&mut self) -> Option<Box<dyn Expression>> {
-        match self.cur_token {
-            TOKEN::INT(i) => Some(Box::new(i)),
-            _ => {
-                self.errors.push(format!(
-                    "parse_int_literal: Expected next token to be INT, got {:?}",
-                    self.cur_token
-                ));
-                return None;
-            }
-        }
+        Some(Box::new(self.cur_token.literal().parse::<i64>().unwrap()))
+    }
+    fn parse_boolean_literal(&mut self) -> Option<Box<dyn Expression>> {
+        Some(Box::new(self.cur_token.literal().parse::<bool>().unwrap()))
     }
     fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
         let mut expression = PrefixExpression::new(self.cur_token.clone());
@@ -250,4 +247,19 @@ impl Parser {
         inf_exp.right = self.parse_expression(precedence);
         Some(Box::new(inf_exp))
     }
+    fn parse_group_expression(&mut self) -> Option<Box<dyn Expression>> {
+        self.next_token(); // to move on from "("
+        let expression = self.parse_expression(Precedence::LOWEST);
+
+        if !self.peek_token.is_same_with(TOKEN::RPAREN) {
+            self.errors.push(format!(
+                "Expected next token to be RPAREN, got {:?}",
+                self.peek_token
+            ));
+            return None;
+        }
+        self.next_token(); // to move on from ")"
+        return expression;
+    }
+    // ----------------- END EXPRESSION PARSERS ----------------------------
 }

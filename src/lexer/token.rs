@@ -66,11 +66,13 @@ impl TOKEN {
             TOKEN::EOF => String::from("EOF"),
             TOKEN::LET => String::from("LET"),
             TOKEN::RETURN => String::from("RETURN"),
+            TOKEN::TRUE => String::from("true"),
+            TOKEN::FALSE => String::from("false"),
             //
             TOKEN::ILLEGAL(c) => String::from(*c),
             TOKEN::IDENT(s) => s.clone(),
             TOKEN::INT(n) => n.to_string(),
-            _ => String::from(""),
+            _ => String::from("not_defined_yet"),
         }
     }
     pub fn to_type_name(&self) -> String {

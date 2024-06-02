@@ -154,6 +154,7 @@ impl Node for ExpressionStatement {
 }
 
 // -------------- EXPRESSION TYPE ----------------------
+//PRIMITIVE String
 pub type Identifier = String;
 impl Expression for Identifier {
     fn as_any(&self) -> &dyn std::any::Any {
@@ -169,7 +170,7 @@ impl Node for Identifier {
         self.clone()
     }
 }
-
+//PRIMITIVE number
 pub type Integer = i64;
 impl Expression for Integer {
     fn as_any(&self) -> &dyn std::any::Any {
@@ -185,6 +186,23 @@ impl Node for Integer {
         self.to_string()
     }
 }
+//PRIMITIVE Boolean
+pub type Boolean = bool;
+impl Expression for Boolean {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for Boolean {
+    fn to_str(&self) -> String {
+        self.to_string()
+    }
+    fn token_literal(&self) -> String {
+        self.to_string()
+    }
+}
+
 #[derive(Debug)]
 pub struct PrefixExpression {
     pub token: TOKEN,

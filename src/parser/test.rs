@@ -200,6 +200,26 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_group_expression() {
+        let tests = vec![
+            ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+            ("(5 + 5) * 2", "((5 + 5) * 2)"),
+            ("2 / (5 + 5)", "(2 / (5 + 5))"),
+            ("-(5 + 5)", "(-(5 + 5))"),
+            ("!(true == true)", "(!(true == true))"),
+        ];
+
+        for &(str1, expected) in tests.iter() {
+            let l1 = Lexer::new(str1.to_string());
+            let mut p1 = Parser::new(l1);
+            let program1 = p1.parse_program();
+            println!("p1: {:#?}", program1);
+            let exp1 = stringnify_stmt(program1.statements);
+            assert_eq!(&exp1, expected)
+        }
+    }
+
     fn stringnify_stmt(stmts: Vec<Box<dyn Statement>>) -> String {
         let mut str = String::new();
         for stmt in stmts.iter() {
