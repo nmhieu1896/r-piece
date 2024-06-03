@@ -6,8 +6,8 @@ mod tests {
 
     use crate::{
         ast::ast::{
-            Expression, ExpressionStatement, Identifier, InfixExpression, LetStatement, Node,
-            PrefixExpression, ReturnStatement, Statement,
+            stringnify_stmt, Expression, ExpressionStatement, Identifier, InfixExpression,
+            LetStatement, Node, PrefixExpression, ReturnStatement, Statement,
         },
         lexer::lexer::Lexer,
         parser::parser::Parser,
@@ -44,6 +44,7 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
+            println!("{:#?}", program);
             assert!(program.statements[0].as_any().is::<ReturnStatement>());
             let stmt = program.statements[0]
                 .as_any()
@@ -195,7 +196,7 @@ mod tests {
             let mut p1 = Parser::new(l1);
             let program1 = p1.parse_program();
             println!("p1: {:#?}", program1);
-            let exp1 = stringnify_stmt(program1.statements);
+            let exp1 = stringnify_stmt(&program1.statements);
             assert_eq!(&exp1, expected)
         }
     }
@@ -215,16 +216,28 @@ mod tests {
             let mut p1 = Parser::new(l1);
             let program1 = p1.parse_program();
             println!("p1: {:#?}", program1);
-            let exp1 = stringnify_stmt(program1.statements);
+            let exp1 = stringnify_stmt(&program1.statements);
             assert_eq!(&exp1, expected)
         }
     }
 
-    fn stringnify_stmt(stmts: Vec<Box<dyn Statement>>) -> String {
-        let mut str = String::new();
-        for stmt in stmts.iter() {
-            str.push_str(&stmt.to_str())
+    #[test]
+    fn test_if_expression() {
+        let input = r#"
+        if (x < y) { 
+            let x = 1;  
+            return x;
+        } else {
+           let y = 1;
+           return y; 
         }
-        return str;
+        "#;
+
+        let l1 = Lexer::new(input.to_string());
+        let mut p1 = Parser::new(l1);
+        let program1 = p1.parse_program();
+        println!("p1: {:#?}", program1);
+        // let exp1 = stringnify_stmt(&program1.statements);
+        // assert_eq!(&exp1, expected)
     }
 }

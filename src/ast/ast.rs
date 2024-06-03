@@ -268,4 +268,79 @@ impl Node for InfixExpression {
         return str;
     }
 }
+
+#[derive(Debug)]
+pub struct BlockStatement {
+    pub statements: Vec<Box<dyn Statement>>,
+}
+impl BlockStatement {
+    pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
+        Self { statements }
+    }
+}
+impl Node for BlockStatement {
+    fn token_literal(&self) -> String {
+        "{}".to_string()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("if ");
+        str.push_str(" {\n");
+        str.push_str(&stringnify_stmt(&self.statements));
+        str.push_str("\n}");
+
+        return str;
+    }
+}
+#[derive(Debug)]
+pub struct IfExpression {
+    pub condition: Box<dyn Expression>,
+    pub consequence: BlockStatement,
+    pub alternative: Option<BlockStatement>,
+}
+impl IfExpression {
+    pub fn new(condition: Box<dyn Expression>) -> Self {
+        IfExpression {
+            condition,
+            consequence: BlockStatement { statements: vec![] },
+            alternative: None,
+        }
+    }
+}
+impl Expression for IfExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for IfExpression {
+    fn token_literal(&self) -> String {
+        "IF".to_string()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("if ");
+        str.push_str(&self.condition.to_str());
+        str.push_str(&self.consequence.to_str());
+        // str.push_str(" {\n");
+        // str.push_str(&stringnify_stmt(&self.consequence.statements));
+        // str.push_str("\n}");
+
+        if self.alternative.is_some() {
+            str.push_str(&self.alternative.as_ref().unwrap().to_str());
+            // str.push_str("else {\n");
+            // str.push_str(&stringnify_stmt(
+            //     &self.alternative.as_ref().unwrap().statements,
+            // ));
+            // str.push_str("\n}");
+        }
+        return str;
+    }
+}
 // -------------- EXPRESSION TYPE ----------------------
+
+pub fn stringnify_stmt(stmts: &Vec<Box<dyn Statement>>) -> String {
+    let mut str = String::new();
+    for stmt in stmts.iter() {
+        str.push_str(&stmt.to_str())
+    }
+    return str;
+}

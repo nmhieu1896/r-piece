@@ -1,7 +1,7 @@
 use crate::{
     ast::ast::{
-        Expression, ExpressionStatement, InfixExpression, LetStatement, Node, PrefixExpression,
-        Program, ReturnStatement, Statement,
+        BlockStatement, Expression, ExpressionStatement, IfExpression, InfixExpression,
+        LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
     },
     lexer::{lexer::Lexer, token::TOKEN},
 };
@@ -62,7 +62,7 @@ impl Parser {
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
         };
-        //
+        // PREFIX PARSERS
         p.register_prefix(TOKEN::IDENT(String::new()), Parser::parse_identifier);
         p.register_prefix(TOKEN::INT(0), Parser::parse_int_literal);
         p.register_prefix(TOKEN::TRUE, Parser::parse_boolean_literal);
@@ -70,7 +70,8 @@ impl Parser {
         p.register_prefix(TOKEN::BANG, Parser::parse_prefix_expression);
         p.register_prefix(TOKEN::MINUS, Parser::parse_prefix_expression);
         p.register_prefix(TOKEN::LPAREN, Parser::parse_group_expression);
-        //
+        p.register_prefix(TOKEN::IF, Parser::parse_if_expression);
+        // INFIX PARSERS
         p.register_infix(TOKEN::PLUS, Parser::parse_infix_expression);
         p.register_infix(TOKEN::MINUS, Parser::parse_infix_expression);
         p.register_infix(TOKEN::SLASH, Parser::parse_infix_expression);
@@ -261,5 +262,47 @@ impl Parser {
         self.next_token(); // to move on from ")"
         return expression;
     }
+    fn parse_if_expression(&mut self) -> Option<Box<dyn Expression>> {
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST);
+        let mut expression = IfExpression::new(condition.unwrap());
+
+        if !self.peek_token.is_same_with(TOKEN::LBRACE) {
+            return None;
+        };
+        self.next_token();
+        expression.consequence = BlockStatement::new(self.parse_block_statement());
+
+        if self.peek_token.is_same_with(TOKEN::ELSE) {
+            self.next_token(); // move to ELSE
+
+            if self.peek_token.is_same_with(TOKEN::LBRACE) {
+                self.next_token(); // move on from ELSE
+                expression.alternative = Some(BlockStatement::new(self.parse_block_statement()));
+            } else if self.peek_token.is_same_with(TOKEN::IF) {
+                // expression.alternative = self.parse_if_expression();
+            } else {
+                return None;
+            }
+        }
+
+        return Some(Box::new(expression));
+    }
     // ----------------- END EXPRESSION PARSERS ----------------------------
+    pub fn parse_block_statement(&mut self) -> Vec<Box<dyn Statement>> {
+        let mut block_stmts = Vec::new();
+
+        self.next_token(); // to move on from "{"
+        while !self.cur_token.is_same_with(TOKEN::RBRACE)
+            && !self.cur_token.is_same_with(TOKEN::EOF)
+        {
+            let stmt = self.parse_statement();
+            if stmt.is_some() {
+                block_stmts.push(stmt.unwrap());
+            }
+            self.next_token();
+        }
+
+        return block_stmts;
+    }
 }
