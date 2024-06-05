@@ -1,8 +1,8 @@
 use crate::{
     ast::ast::{
         BlockStatement, CallExpression, Expression, ExpressionStatement, FunctionLiteral,
-        IfExpression, InfixExpression, LetStatement, Node, PrefixExpression, Program,
-        ReturnStatement, Statement,
+        IfExpression, InfixExpression, LetStatement, PrefixExpression, Program, ReturnStatement,
+        Statement,
     },
     lexer::{lexer::Lexer, token::TOKEN},
 };
@@ -152,21 +152,21 @@ impl Parser {
             ));
             // return None;
         }
-        stmt.name = Some(self.peek_token.literal());
+        self.next_token(); // to ident token
+        stmt.name = Some(self.cur_token.literal());
 
-        // get ASSIGN
-        self.next_token();
-        if !self.peek_token.is_same_with(TOKEN::ASSIGN) {
+        self.next_token(); //to assign token
+        if !self.cur_token.is_same_with(TOKEN::ASSIGN) {
             self.errors.push(format!(
                 "Expected next token to be ASSIGN, got {:?}",
-                self.peek_token
+                self.cur_token
             ));
-            // return None;
         }
 
-        while !self.cur_token.is_same_with(TOKEN::SEMICOLON) {
+        self.next_token(); //to expression
+        stmt.value = self.parse_expression(Precedence::LOWEST);
+        if self.peek_token.is_same_with(TOKEN::SEMICOLON) {
             self.next_token();
-            stmt.value = self.parse_expression_statement().unwrap().expression;
         }
 
         return Some(stmt);
@@ -175,9 +175,10 @@ impl Parser {
     pub fn parse_return_statement(&mut self) -> Option<ReturnStatement> {
         let mut stmt = ReturnStatement::new();
 
-        while !self.cur_token.is_same_with(TOKEN::SEMICOLON) {
+        self.next_token();
+        stmt.expression = self.parse_expression(Precedence::LOWEST);
+        if self.peek_token.is_same_with(TOKEN::SEMICOLON) {
             self.next_token();
-            stmt.expression = self.parse_expression_statement().unwrap().expression;
         }
 
         return Some(stmt);
@@ -351,12 +352,7 @@ impl Parser {
     // call this when current token is "("
     fn parse_call_args(&mut self) -> Vec<Box<dyn Expression>> {
         let mut args = vec![];
-        // if self.peek_token.is_same_with(TOKEN::RPAREN) {
-        //     self.next_token();
-        //     return Some(Box::new(args));
-        // }
-        // self.next_token();
-        // args.push(value)
+
         while !self.peek_token.is_same_with(TOKEN::RPAREN) {
             self.next_token();
             if let Some(exp) = self.parse_expression(Precedence::LOWEST) {

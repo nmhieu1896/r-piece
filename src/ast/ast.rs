@@ -8,22 +8,18 @@ pub trait Node: Debug {
 }
 
 pub trait Statement: Node {
+    #[allow(unused)]
     fn as_any(&self) -> &dyn std::any::Any;
+    #[allow(unused)]
     fn statement_node(&self);
 }
 
 pub trait Expression: Node {
+    #[allow(unused)]
     fn as_any(&self) -> &dyn std::any::Any;
+    #[allow(unused)]
     fn expression_node(&self);
 }
-// pub trait AsAny {
-//     fn as_any(&self) -> &dyn std::any::Any;
-// }
-// impl<T: Statement + Expression> AsAny for T {
-//     fn as_any(&self) -> &dyn std::any::Any {
-//         self
-//     }
-// }
 
 #[derive(Debug)]
 pub struct Program {

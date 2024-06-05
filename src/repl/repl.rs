@@ -1,9 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{
-    lexer::{lexer::Lexer, token::TOKEN},
-    parser::parser::Parser,
-};
+use crate::{ast::ast::stringnify_stmt, lexer::lexer::Lexer, parser::parser::Parser};
 
 pub fn run_repl() {
     println!("Welcome to the REPL CLI. Type 'exit' to quit.");
@@ -22,16 +19,24 @@ pub fn run_repl() {
             break;
         }
 
-        let mut l = Lexer::new(input.to_string());
+        let l = Lexer::new(input.to_string());
         let mut p = Parser::new(l.clone());
 
-        loop {
-            match l.next_token() {
-                TOKEN::EOF => break,
-                tk => println!("{:?}", tk),
+        if p.errors.len() > 0 {
+            println!("Parser has {} errors", p.errors.len());
+            for e in p.errors {
+                println!("{}", e);
             }
+            continue;
         }
-        println!("{:#?}", p.parse_program());
+        // loop {
+        // match l.next_token() {
+        //     TOKEN::EOF => break,
+        //     tk => println!("{:?}", tk),
+        // }
+        // }
+        let program = p.parse_program();
+        println!("{:?}", stringnify_stmt(&program.statements));
     }
 
     println!("Exit REPL!");
