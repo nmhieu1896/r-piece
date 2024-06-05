@@ -1,7 +1,7 @@
 use crate::{
     ast::ast::{
-        BlockStatement, Expression, ExpressionStatement, IfExpression, InfixExpression,
-        LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
+        BlockStatement, Expression, ExpressionStatement, FunctionLiteral, IfExpression,
+        InfixExpression, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
     },
     lexer::{lexer::Lexer, token::TOKEN},
 };
@@ -71,6 +71,7 @@ impl Parser {
         p.register_prefix(TOKEN::MINUS, Parser::parse_prefix_expression);
         p.register_prefix(TOKEN::LPAREN, Parser::parse_group_expression);
         p.register_prefix(TOKEN::IF, Parser::parse_if_expression);
+        p.register_prefix(TOKEN::FUNCTION, Parser::parse_function_literal);
         // INFIX PARSERS
         p.register_infix(TOKEN::PLUS, Parser::parse_infix_expression);
         p.register_infix(TOKEN::MINUS, Parser::parse_infix_expression);
@@ -289,6 +290,7 @@ impl Parser {
         return Some(Box::new(expression));
     }
     // ----------------- END EXPRESSION PARSERS ----------------------------
+    //When calling this, current token must be "{" or LBRACE
     pub fn parse_block_statement(&mut self) -> Vec<Box<dyn Statement>> {
         let mut block_stmts = Vec::new();
 
@@ -304,5 +306,34 @@ impl Parser {
         }
 
         return block_stmts;
+    }
+    pub fn parse_function_literal(&mut self) -> Option<Box<dyn Expression>> {
+        self.next_token();
+        let mut function = FunctionLiteral::new(self.parse_fn_parameters());
+        function.body = BlockStatement::new(self.parse_block_statement());
+        return Some(Box::new(function));
+    }
+    // when calling this, current token must be "(" or LPAREN
+    pub fn parse_fn_parameters(&mut self) -> Vec<String> {
+        let mut identifiers = Vec::new();
+        self.next_token(); // move on from '(',
+        while !self.cur_token.is_same_with(TOKEN::RPAREN) {
+            match self.cur_token {
+                TOKEN::IDENT(ref name) => {
+                    identifiers.push(name.clone());
+                    self.next_token()
+                }
+                _ => self.errors.push(format!(
+                    "Expected next token to be IDENT, got {:?}",
+                    self.cur_token
+                )),
+            }
+            if self.cur_token.is_same_with(TOKEN::COMMA) {
+                self.next_token()
+            }
+        }
+        self.next_token(); // move on from (
+
+        return identifiers;
     }
 }

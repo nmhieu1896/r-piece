@@ -153,6 +153,29 @@ impl Node for ExpressionStatement {
     }
 }
 
+#[derive(Debug)]
+pub struct BlockStatement {
+    pub statements: Vec<Box<dyn Statement>>,
+}
+impl BlockStatement {
+    pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
+        Self { statements }
+    }
+}
+impl Node for BlockStatement {
+    fn token_literal(&self) -> String {
+        "{}".to_string()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("if ");
+        str.push_str(" {\n");
+        str.push_str(&stringnify_stmt(&self.statements));
+        str.push_str("\n}");
+
+        return str;
+    }
+}
+
 // -------------- EXPRESSION TYPE ----------------------
 //PRIMITIVE String
 pub type Identifier = String;
@@ -200,6 +223,46 @@ impl Node for Boolean {
     }
     fn token_literal(&self) -> String {
         self.to_string()
+    }
+}
+
+#[derive(Debug)]
+pub struct FunctionLiteral {
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+}
+impl FunctionLiteral {
+    pub fn new(parameters: Vec<Identifier>) -> Self {
+        Self {
+            parameters: parameters,
+            body: BlockStatement { statements: vec![] },
+        }
+    }
+}
+impl Expression for FunctionLiteral {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for FunctionLiteral {
+    fn to_str(&self) -> String {
+        let mut str = String::from("fn (");
+
+        let vec = self
+            .parameters
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+        str.push_str(&vec.join(", "));
+        str.push_str(") {\n");
+        str.push_str(&stringnify_stmt(&self.body.statements));
+        str.push_str("\n}");
+
+        str
+    }
+    fn token_literal(&self) -> String {
+        TOKEN::FUNCTION.literal()
     }
 }
 
@@ -269,28 +332,6 @@ impl Node for InfixExpression {
     }
 }
 
-#[derive(Debug)]
-pub struct BlockStatement {
-    pub statements: Vec<Box<dyn Statement>>,
-}
-impl BlockStatement {
-    pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
-        Self { statements }
-    }
-}
-impl Node for BlockStatement {
-    fn token_literal(&self) -> String {
-        "{}".to_string()
-    }
-    fn to_str(&self) -> String {
-        let mut str = String::from("if ");
-        str.push_str(" {\n");
-        str.push_str(&stringnify_stmt(&self.statements));
-        str.push_str("\n}");
-
-        return str;
-    }
-}
 #[derive(Debug)]
 pub struct IfExpression {
     pub condition: Box<dyn Expression>,

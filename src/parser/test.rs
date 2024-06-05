@@ -2,12 +2,12 @@
 mod tests {
     // use std::ops::Deref;
 
-    use std::borrow::Borrow;
+    use std::{borrow::Borrow, vec};
 
     use crate::{
         ast::ast::{
-            stringnify_stmt, Expression, ExpressionStatement, Identifier, InfixExpression,
-            LetStatement, Node, PrefixExpression, ReturnStatement, Statement,
+            stringnify_stmt, Expression, ExpressionStatement, FunctionLiteral, Identifier,
+            InfixExpression, LetStatement, Node, PrefixExpression, ReturnStatement, Statement,
         },
         lexer::lexer::Lexer,
         parser::parser::Parser,
@@ -239,5 +239,36 @@ mod tests {
         println!("p1: {:#?}", program1);
         // let exp1 = stringnify_stmt(&program1.statements);
         // assert_eq!(&exp1, expected)
+    }
+
+    #[test]
+    fn test_function_literal_parsing() {
+        let v1 = vec![];
+        let v2 = vec!["x".to_string(), "y".to_string(), "z".to_string()];
+        let inputs = vec![
+            ("fn() { }", &v1, ""),
+            ("fn(x, y, z) { x + y * z; }", &v2, "(x + (y * z))"),
+        ];
+
+        for &(input, parameters, block_expect) in inputs.iter() {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            println!("p: {:#?}", program);
+            let stmt = program.statements[0]
+                .as_any()
+                .downcast_ref::<ExpressionStatement>()
+                .unwrap();
+            let fn_stmt = stmt
+                .expression
+                .as_deref()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<FunctionLiteral>()
+                .unwrap();
+            assert_eq!(&fn_stmt.parameters, parameters);
+            let block_stmt = stringnify_stmt(&fn_stmt.body.statements);
+            assert_eq!(block_stmt, block_expect);
+        }
     }
 }

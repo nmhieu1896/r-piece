@@ -94,10 +94,17 @@ impl TOKEN {
             TOKEN::LBRACE => String::from("{"),
             TOKEN::RBRACE => String::from("}"),
             TOKEN::EOF => String::from("EOF"),
+            TOKEN::LET => String::from("LET"),
+            TOKEN::RETURN => String::from("RETURN"),
+            TOKEN::TRUE => String::from("true"),
+            TOKEN::FALSE => String::from("false"),
+            TOKEN::IF => String::from("if"),
+            TOKEN::ELSE => String::from("else"),
+            TOKEN::FUNCTION => String::from("fn"),
             //
             TOKEN::IDENT(_) => String::from("IDENT"),
             TOKEN::INT(_) => String::from("INT"),
-            _ => String::from("ILLEGAL"),
+            TOKEN::ILLEGAL(_) => String::from("ILLEGAL"),
         }
     }
 
