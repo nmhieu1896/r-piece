@@ -168,9 +168,9 @@ impl Node for BlockStatement {
     }
     fn to_str(&self) -> String {
         let mut str = String::from("if ");
-        str.push_str(" {\n");
+        str.push_str(" {");
         str.push_str(&stringnify_stmt(&self.statements));
-        str.push_str("\n}");
+        str.push_str("}");
 
         return str;
     }
@@ -247,7 +247,7 @@ impl Expression for FunctionLiteral {
 }
 impl Node for FunctionLiteral {
     fn to_str(&self) -> String {
-        let mut str = String::from("fn (");
+        let mut str = String::from("fn(");
 
         let vec = self
             .parameters
@@ -255,9 +255,9 @@ impl Node for FunctionLiteral {
             .map(|x| x.to_string())
             .collect::<Vec<String>>();
         str.push_str(&vec.join(", "));
-        str.push_str(") {\n");
+        str.push_str(") {");
         str.push_str(&stringnify_stmt(&self.body.statements));
-        str.push_str("\n}");
+        str.push_str("}");
 
         str
     }
@@ -361,18 +361,50 @@ impl Node for IfExpression {
         let mut str = String::from("if ");
         str.push_str(&self.condition.to_str());
         str.push_str(&self.consequence.to_str());
-        // str.push_str(" {\n");
-        // str.push_str(&stringnify_stmt(&self.consequence.statements));
-        // str.push_str("\n}");
 
         if self.alternative.is_some() {
             str.push_str(&self.alternative.as_ref().unwrap().to_str());
-            // str.push_str("else {\n");
-            // str.push_str(&stringnify_stmt(
-            //     &self.alternative.as_ref().unwrap().statements,
-            // ));
-            // str.push_str("\n}");
         }
+        return str;
+    }
+}
+
+#[derive(Debug)]
+pub struct CallExpression {
+    pub function: Box<dyn Expression>, // Identifier or FunctionLiteral
+    pub arguments: Vec<Box<dyn Expression>>,
+}
+impl CallExpression {
+    pub fn new(function: Box<dyn Expression>) -> Self {
+        Self {
+            function,
+            arguments: vec![],
+        }
+    }
+}
+impl Expression for CallExpression {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn expression_node(&self) {}
+}
+impl Node for CallExpression {
+    fn token_literal(&self) -> String {
+        "CALL".to_string()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("");
+        str.push_str(&self.function.to_str());
+        str.push('(');
+        str.push_str(
+            &self
+                .arguments
+                .iter()
+                .map(|x| x.to_str())
+                .collect::<Vec<String>>()
+                .join(", "),
+        );
+        str.push(')');
         return str;
     }
 }

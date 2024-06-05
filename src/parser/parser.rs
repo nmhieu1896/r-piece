@@ -1,7 +1,8 @@
 use crate::{
     ast::ast::{
-        BlockStatement, Expression, ExpressionStatement, FunctionLiteral, IfExpression,
-        InfixExpression, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
+        BlockStatement, CallExpression, Expression, ExpressionStatement, FunctionLiteral,
+        IfExpression, InfixExpression, LetStatement, Node, PrefixExpression, Program,
+        ReturnStatement, Statement,
     },
     lexer::{lexer::Lexer, token::TOKEN},
 };
@@ -26,6 +27,7 @@ impl Precedence {
             TOKEN::LT | TOKEN::GT => Self::LESSGREATER,
             TOKEN::PLUS | TOKEN::MINUS => Self::SUM,
             TOKEN::SLASH | TOKEN::ASTERISK => Self::PRODUCT,
+            TOKEN::LPAREN => Self::CALL,
             _ => Self::LOWEST,
         }
     }
@@ -81,6 +83,7 @@ impl Parser {
         p.register_infix(TOKEN::NotEQ, Parser::parse_infix_expression);
         p.register_infix(TOKEN::LT, Parser::parse_infix_expression);
         p.register_infix(TOKEN::GT, Parser::parse_infix_expression);
+        p.register_infix(TOKEN::LPAREN, Parser::parse_call_expression);
         //Read two token so current token and peek token are both set
         p.next_token();
         p.next_token();
@@ -335,5 +338,32 @@ impl Parser {
         self.next_token(); // move on from (
 
         return identifiers;
+    }
+    pub fn parse_call_expression(
+        &mut self,
+        function: Box<dyn Expression>,
+    ) -> Option<Box<dyn Expression>> {
+        println!("PARSE CALL EXP");
+        let mut call = CallExpression::new(function);
+        call.arguments = self.parse_call_args();
+        return Some(Box::new(call));
+    }
+    // call this when current token is "("
+    fn parse_call_args(&mut self) -> Vec<Box<dyn Expression>> {
+        let mut args = vec![];
+        // if self.peek_token.is_same_with(TOKEN::RPAREN) {
+        //     self.next_token();
+        //     return Some(Box::new(args));
+        // }
+        // self.next_token();
+        // args.push(value)
+        while !self.peek_token.is_same_with(TOKEN::RPAREN) {
+            self.next_token();
+            if let Some(exp) = self.parse_expression(Precedence::LOWEST) {
+                args.push(exp);
+            }
+        }
+
+        return args;
     }
 }

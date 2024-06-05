@@ -2,12 +2,12 @@
 mod tests {
     // use std::ops::Deref;
 
-    use std::{borrow::Borrow, vec};
+    use std::vec;
 
     use crate::{
         ast::ast::{
-            stringnify_stmt, Expression, ExpressionStatement, FunctionLiteral, Identifier,
-            InfixExpression, LetStatement, Node, PrefixExpression, ReturnStatement, Statement,
+            stringnify_stmt, CallExpression, ExpressionStatement, FunctionLiteral, InfixExpression,
+            LetStatement, Node, PrefixExpression, ReturnStatement,
         },
         lexer::lexer::Lexer,
         parser::parser::Parser,
@@ -269,6 +269,52 @@ mod tests {
             assert_eq!(&fn_stmt.parameters, parameters);
             let block_stmt = stringnify_stmt(&fn_stmt.body.statements);
             assert_eq!(block_stmt, block_expect);
+        }
+    }
+
+    #[test]
+    fn test_function_parameter_parsing() {
+        let v1 = vec!["1", "(2 * 3)", "(4 + 5)"];
+        let v2 = vec!["(((a + b) + ((c * d) / f)) + g)"];
+        let v3 = vec!["a", "b", "1", "(2 * 3)", "(4 + 5)", "add(6, (7 * 8))"];
+        let tests = vec![
+            (
+                "fn(a,b,c){a+b+c}(1,2*3, 4+5);",
+                &v1,
+                "fn(a, b, c) {((a + b) + c)}(1, (2 * 3), (4 + 5))",
+            ),
+            (
+                "add(a + b + c * d / f + g)",
+                &v2,
+                "add((((a + b) + ((c * d) / f)) + g))",
+            ),
+            (
+                "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+                &v3,
+                "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+            ),
+        ];
+
+        for &(input, expected_args, expected_fn_call) in tests.iter() {
+            let l = Lexer::new(input.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            println!("p: {:#?}", program);
+            let stmt = program.statements[0]
+                .as_any()
+                .downcast_ref::<ExpressionStatement>()
+                .unwrap();
+            let fn_call = stmt
+                .expression
+                .as_deref()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<CallExpression>()
+                .unwrap();
+            assert_eq!(fn_call.to_str(), expected_fn_call);
+            for (idx, &exp) in expected_args.iter().enumerate() {
+                assert_eq!(fn_call.arguments[idx].to_str(), exp);
+            }
         }
     }
 }
