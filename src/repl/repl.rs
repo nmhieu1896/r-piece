@@ -22,27 +22,10 @@ pub fn run_repl() {
         let l = Lexer::new(input.to_string());
         let mut p = Parser::new(l.clone());
 
-        if p.errors.len() > 0 {
-            println!("Parser has {} errors", p.errors.len());
-            for e in p.errors {
-                println!("{}", e);
-            }
-            continue;
-        }
-        // loop {
-        // match l.next_token() {
-        //     TOKEN::EOF => break,
-        //     tk => println!("{:?}", tk),
-        // }
-        // }
         let program = p.parse_program();
         match program {
-            Ok(p) => {
-                println!("{:?}", stringnify_stmt(&p.statements));
-            }
-            Err(e) => {
-                println!("{:?}", e);
-            }
+            Ok(p) => println!("{:?}", stringnify_stmt(&p.statements)),
+            Err(e) => println!("{:?}", e),
         }
     }
 

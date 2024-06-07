@@ -32,6 +32,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             }
             let p = program.unwrap();
@@ -51,6 +52,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             }
             let p = program.unwrap();
@@ -77,6 +79,7 @@ mod tests {
         let program = p.parse_program();
         if program.is_err() {
             println!("{:?}", program.err().unwrap());
+            assert!(false);
             return;
         };
         let p = program.unwrap();
@@ -102,6 +105,7 @@ mod tests {
         let program = p.parse_program();
         if program.is_err() {
             println!("{:?}", program.err().unwrap());
+            assert!(false);
             return;
         };
         let p = program.unwrap();
@@ -126,6 +130,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             };
             let p = program.unwrap();
@@ -167,6 +172,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             };
             let p = program.unwrap();
@@ -224,6 +230,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             };
             let p = program.unwrap();
@@ -256,6 +263,7 @@ mod tests {
                 }
                 Err(e) => {
                     println!("{:?}", e);
+                    assert!(false);
                 }
             }
         }
@@ -296,6 +304,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             }
             let p = program.unwrap();
@@ -347,6 +356,7 @@ mod tests {
             let program = p.parse_program();
             if program.is_err() {
                 println!("{:?}", program.err().unwrap());
+                assert!(false);
                 return;
             }
             let p = program.unwrap();

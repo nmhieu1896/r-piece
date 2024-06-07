@@ -1,12 +1,10 @@
-use anyhow::bail;
-
 use crate::{
     ast::ast::{
         BlockStatement, CallExpression, Expression, ExpressionStatement, FunctionLiteral,
         IfExpression, InfixExpression, LetStatement, PrefixExpression, Program, ReturnStatement,
         Statement,
     },
-    errors::ParseErr,
+    errors::parser_errs::ParseErr,
     lexer::{lexer::Lexer, token::TOKEN},
 };
 
@@ -50,7 +48,6 @@ impl Precedence {
 #[derive(Debug)]
 pub struct Parser {
     l: Lexer,
-    pub errors: Vec<String>,
     cur_token: TOKEN,
     peek_token: TOKEN,
     prefix_parse_fns: HashMap<String, PrefixParseFn>,
@@ -61,14 +58,13 @@ impl Parser {
     pub fn new(l: Lexer) -> Parser {
         let mut p = Parser {
             l,
-            errors: vec![],
             cur_token: TOKEN::EOF,
             peek_token: TOKEN::EOF,
             prefix_parse_fns: HashMap::new(),
             infix_parse_fns: HashMap::new(),
         };
         // PREFIX PARSERS
-        p.register_prefix(TOKEN::IDENT(String::new()), Parser::parse_identifier);
+        p.register_prefix(TOKEN::IDENT("".into()), Parser::parse_identifier);
         p.register_prefix(TOKEN::INT(0), Parser::parse_int_literal);
         p.register_prefix(TOKEN::TRUE, Parser::parse_boolean_literal);
         p.register_prefix(TOKEN::FALSE, Parser::parse_boolean_literal);
@@ -125,24 +121,29 @@ impl Parser {
         }
     }
 
+    fn result_to_option(
+        &self,
+        result: Result<Box<dyn Expression>, ParseErr>,
+    ) -> Result<Option<Box<dyn Expression>>, ParseErr> {
+        match result {
+            Ok(ok_exp) => Ok(Some(ok_exp)),
+            Err(ParseErr::None) => Ok(None),
+            Err(err) => {
+                return Err(err);
+            }
+        }
+    }
+
     pub fn parse_let_statement(&mut self) -> Result<LetStatement, ParseErr> {
-        // get IDENT
         if !self.peek_token.is_same_with(TOKEN::IDENT(String::new())) {
-            self.errors.push(format!(
-                "Expected next token to be IDENT, got {:?}",
-                self.peek_token
-            ));
-            // return None;
+            return Err(ParseErr::LET("IDENT".into(), self.peek_token.clone()));
         }
         self.next_token(); // to ident token
         let name = self.cur_token.literal();
 
         self.next_token(); //to assign token
         if !self.cur_token.is_same_with(TOKEN::ASSIGN) {
-            self.errors.push(format!(
-                "Expected next token to be ASSIGN, got {:?}",
-                self.cur_token
-            ));
+            return Err(ParseErr::LET("ASSIGN".into(), self.cur_token.clone()));
         }
 
         self.next_token(); //to expression
@@ -160,25 +161,15 @@ impl Parser {
         let mut stmt = ReturnStatement::new();
 
         self.next_token();
-        let expression = self.parse_expression(Precedence::LOWEST)?;
-        stmt.expression = Some(expression);
-        if self.peek_token.is_same_with(TOKEN::SEMICOLON) {
-            self.next_token();
-        }
-
+        let expression = self.parse_expression(Precedence::LOWEST);
+        stmt.expression = self.result_to_option(expression)?;
         return Ok(stmt);
     }
 
     pub fn parse_expression_statement(&mut self) -> Result<ExpressionStatement, ParseErr> {
         let mut stmt = ExpressionStatement::new(self.cur_token.clone());
-        let exp = self.parse_expression(Precedence::LOWEST);
-        stmt.expression = match exp {
-            Ok(ok_exp) => Some(ok_exp),
-            Err(ParseErr::None) => None,
-            Err(err) => {
-                return Err(err);
-            }
-        };
+        let expression = self.parse_expression(Precedence::LOWEST);
+        stmt.expression = self.result_to_option(expression)?;
 
         if self.peek_token.is_same_with(TOKEN::SEMICOLON) {
             self.next_token();
@@ -193,7 +184,6 @@ impl Parser {
     ) -> Result<Box<dyn Expression>, ParseErr> {
         let prefix = self.prefix_parse_fns.get(&self.cur_token.to_type_name());
         if prefix.is_none() {
-            // return ParseErr::none();
             return Err(ParseErr::None);
         }
 
@@ -204,7 +194,7 @@ impl Parser {
         {
             let infix = self.infix_parse_fns.get(&self.peek_token.to_type_name());
             if infix.is_none() {
-                return Ok(left_exp);
+                return Err(ParseErr::INFIX("INFIX".into(), self.cur_token.clone()));
             }
             self.next_token();
             //cannot use infix.unwrap()(self,left_exp) here because of mutable borrow
@@ -258,28 +248,18 @@ impl Parser {
         let expression = self.parse_expression(Precedence::LOWEST);
 
         if !self.peek_token.is_same_with(TOKEN::RPAREN) {
-            self.errors.push(format!(
-                "Expected next token to be RPAREN, got {:?}",
-                self.peek_token
-            ));
-            return Err(ParseErr::GROUP(format!(
-                "Expected next token to be RPAREN, got {:?}",
-                self.peek_token
-            )));
+            return Err(ParseErr::GROUP("RPAREN".into(), self.peek_token.clone()));
         }
         self.next_token(); // to move on from ")"
         return expression;
     }
     fn parse_if_expression(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
         self.next_token();
-        let condition = self.parse_expression(Precedence::LOWEST);
-        let mut expression = IfExpression::new(condition.unwrap());
+        let condition = self.parse_expression(Precedence::LOWEST)?;
+        let mut expression = IfExpression::new(condition);
 
         if !self.peek_token.is_same_with(TOKEN::LBRACE) {
-            return Err(ParseErr::IF(format!(
-                "Expected next token to be LBRACE, got {:?}",
-                self.peek_token
-            )));
+            return Err(ParseErr::IF("LBRACE".into(), self.peek_token.clone()));
         };
         self.next_token();
         expression.consequence = BlockStatement::new(self.parse_block_statement()?);
@@ -287,13 +267,14 @@ impl Parser {
         if self.peek_token.is_same_with(TOKEN::ELSE) {
             self.next_token(); // move to ELSE
 
-            if self.peek_token.is_same_with(TOKEN::LBRACE) {
+            expression.alternative = if self.peek_token.is_same_with(TOKEN::LBRACE) {
                 self.next_token(); // move on from ELSE
-                expression.alternative = Some(BlockStatement::new(self.parse_block_statement()?));
+                Some(BlockStatement::new(self.parse_block_statement()?))
             } else if self.peek_token.is_same_with(TOKEN::IF) {
-                // expression.alternative = self.parse_if_expression();
+                None
             } else {
-                // return None;
+                let expect = "IF or LBRACE";
+                return Err(ParseErr::ELSE(expect.into(), self.peek_token.clone()));
             }
         }
 
@@ -302,12 +283,17 @@ impl Parser {
     // ----------------- END EXPRESSION PARSERS ----------------------------
     //When calling this, current token must be "{" or LBRACE
     pub fn parse_block_statement(&mut self) -> Result<Vec<Box<dyn Statement>>, ParseErr> {
+        if self.cur_token.is_same_with(TOKEN::RBRACE) {
+            return Err(ParseErr::BLOCK("RBRACE".into(), self.cur_token.clone()));
+        }
         let mut block_stmts = Vec::new();
 
         self.next_token(); // to move on from "{"
-        while !self.cur_token.is_same_with(TOKEN::RBRACE)
-            && !self.cur_token.is_same_with(TOKEN::EOF)
-        {
+        while !self.cur_token.is_same_with(TOKEN::RBRACE) {
+            if self.cur_token.is_same_with(TOKEN::EOF) {
+                return Err(ParseErr::BLOCK("LBRACE".into(), self.cur_token.clone()));
+            }
+
             let stmt = self.parse_statement()?;
             block_stmts.push(stmt);
             self.next_token();
@@ -317,12 +303,12 @@ impl Parser {
     }
     pub fn parse_function_literal(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
         self.next_token();
-        let mut function = FunctionLiteral::new(self.parse_fn_parameters());
+        let mut function = FunctionLiteral::new(self.parse_fn_parameters()?);
         function.body = BlockStatement::new(self.parse_block_statement()?);
         return Ok(Box::new(function));
     }
     // when calling this, current token must be "(" or LPAREN
-    pub fn parse_fn_parameters(&mut self) -> Vec<String> {
+    pub fn parse_fn_parameters(&mut self) -> Result<Vec<String>, ParseErr> {
         let mut identifiers = Vec::new();
         self.next_token(); // move on from '(',
         while !self.cur_token.is_same_with(TOKEN::RPAREN) {
@@ -331,10 +317,9 @@ impl Parser {
                     identifiers.push(name.clone());
                     self.next_token()
                 }
-                _ => self.errors.push(format!(
-                    "Expected next token to be IDENT, got {:?}",
-                    self.cur_token
-                )),
+                _ => {
+                    return Err(ParseErr::FN("IDENT".into(), self.cur_token.clone()));
+                }
             }
             if self.cur_token.is_same_with(TOKEN::COMMA) {
                 self.next_token()
@@ -342,28 +327,31 @@ impl Parser {
         }
         self.next_token(); // move on from (
 
-        return identifiers;
+        return Ok(identifiers);
     }
     pub fn parse_call_expression(
         &mut self,
         function: Box<dyn Expression>,
     ) -> Result<Box<dyn Expression>, ParseErr> {
-        println!("PARSE CALL EXP");
         let mut call = CallExpression::new(function);
-        call.arguments = self.parse_call_args();
+        call.arguments = self.parse_call_args()?;
         return Ok(Box::new(call));
     }
     // call this when current token is "("
-    fn parse_call_args(&mut self) -> Vec<Box<dyn Expression>> {
+    fn parse_call_args(&mut self) -> Result<Vec<Box<dyn Expression>>, ParseErr> {
         let mut args = vec![];
 
         while !self.peek_token.is_same_with(TOKEN::RPAREN) {
+            if self.peek_token.is_same_with(TOKEN::EOF) {
+                return Err(ParseErr::CALL("RPAREN".into(), self.peek_token.clone()));
+            }
             self.next_token();
-            if let Ok(exp) = self.parse_expression(Precedence::LOWEST) {
+            let expression = self.parse_expression(Precedence::LOWEST);
+            if let Some(exp) = self.result_to_option(expression)? {
                 args.push(exp);
             }
         }
 
-        return args;
+        return Ok(args);
     }
 }
