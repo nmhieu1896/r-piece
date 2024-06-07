@@ -36,7 +36,14 @@ pub fn run_repl() {
         // }
         // }
         let program = p.parse_program();
-        println!("{:?}", stringnify_stmt(&program.statements));
+        match program {
+            Ok(p) => {
+                println!("{:?}", stringnify_stmt(&p.statements));
+            }
+            Err(e) => {
+                println!("{:?}", e);
+            }
+        }
     }
 
     println!("Exit REPL!");

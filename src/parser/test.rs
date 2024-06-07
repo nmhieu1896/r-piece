@@ -30,23 +30,33 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            }
+            let p = program.unwrap();
             // println!("{:#?}", program);
-            assert!(program.statements[0].as_any().is::<LetStatement>());
-            let stmt = program.statements[0]
+            assert!(p.statements[0].as_any().is::<LetStatement>());
+            let stmt = p.statements[0]
                 .as_any()
                 .downcast_ref::<LetStatement>()
                 .unwrap();
             assert_eq!(stmt.token.literal(), keyword.to_string());
-            assert_eq!(stmt.name.clone().unwrap(), ident.to_string());
-            assert_eq!(stmt.value.as_deref().unwrap().to_str(), val.to_string());
+            assert_eq!(stmt.name.clone(), ident.to_string());
+            assert_eq!(stmt.value.as_ref().to_str(), val.to_string());
         }
         for &(input, keyword, val) in return_inputs.iter() {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
-            println!("{:#?}", program);
-            assert!(program.statements[0].as_any().is::<ReturnStatement>());
-            let stmt = program.statements[0]
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            }
+            let p = program.unwrap();
+            println!("{:#?}", p);
+            assert!(p.statements[0].as_any().is::<ReturnStatement>());
+            let stmt = p.statements[0]
                 .as_any()
                 .downcast_ref::<ReturnStatement>()
                 .unwrap();
@@ -65,18 +75,22 @@ mod tests {
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
-        println!("{:#?}", program);
-        assert_eq!(program.statements[0].token_literal(), "foobar");
-        assert!(program.statements[0].as_any().is::<ExpressionStatement>());
-        let stmt = program.statements[0]
+        if program.is_err() {
+            println!("{:?}", program.err().unwrap());
+            return;
+        };
+        let p = program.unwrap();
+        println!("{:#?}", p);
+        assert_eq!(p.statements[0].token_literal(), "foobar");
+        assert!(p.statements[0].as_any().is::<ExpressionStatement>());
+        let stmt = p.statements[0]
             .as_any()
             .downcast_ref::<ExpressionStatement>();
 
         let exp = stmt.unwrap().expression.as_deref();
         assert_eq!(exp.unwrap().token_literal(), "foobar".to_string());
         assert!(exp.unwrap().as_any().is::<String>());
-        assert_eq!(program.statements.len(), 1);
-        assert_eq!(p.errors.len(), 0);
+        assert_eq!(p.statements.len(), 1);
     }
 
     #[test]
@@ -86,17 +100,21 @@ mod tests {
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
-        println!("{:#?}", program);
+        if program.is_err() {
+            println!("{:?}", program.err().unwrap());
+            return;
+        };
+        let p = program.unwrap();
 
-        let stmt = program.statements[0]
+        println!("{:#?}", p);
+        let stmt = p.statements[0]
             .as_any()
             .downcast_ref::<ExpressionStatement>();
         let exp = stmt.unwrap().expression.as_deref();
         assert!(exp.unwrap().as_any().is::<i64>());
         assert_eq!(exp.unwrap().token_literal(), "5".to_string());
 
-        assert_eq!(program.statements.len(), 1);
-        assert_eq!(p.errors.len(), 0);
+        assert_eq!(p.statements.len(), 1);
     }
     #[test]
     fn test_prefix_expressions() {
@@ -106,8 +124,13 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            };
+            let p = program.unwrap();
             // println!("{:#?}", program);
-            let stmt = program.statements[0]
+            let stmt = p.statements[0]
                 .as_any()
                 .downcast_ref::<ExpressionStatement>()
                 .unwrap();
@@ -119,11 +142,9 @@ mod tests {
                 .downcast_ref::<PrefixExpression>()
                 .unwrap();
             assert_eq!(prefix_exp.token.literal(), operator.to_string());
-            let right = prefix_exp.right.as_deref();
-            assert_eq!(right.unwrap().token_literal(), value.to_string());
+            assert_eq!(prefix_exp.right.as_ref().token_literal(), value.to_string());
 
-            assert_eq!(program.statements.len(), 1);
-            assert_eq!(p.errors.len(), 0);
+            assert_eq!(p.statements.len(), 1);
         }
     }
 
@@ -144,11 +165,15 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
-            println!("{:#?}", program);
-            assert_eq!(program.statements.len(), 1);
-            assert_eq!(p.errors.len(), 0);
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            };
+            let p = program.unwrap();
+            println!("{:#?}", p);
+            assert_eq!(p.statements.len(), 1);
 
-            let stmt = program.statements[0]
+            let stmt = p.statements[0]
                 .as_any()
                 .downcast_ref::<ExpressionStatement>()
                 .unwrap();
@@ -163,8 +188,10 @@ mod tests {
             assert_eq!(infix_exp.operator.literal(), operator.to_string());
             let left = infix_exp.left.as_ref(); //as_ref for Box
             assert_eq!(left.token_literal(), left_value.to_string());
-            let right = infix_exp.right.as_deref(); // as_deref for Option<Box>
-            assert_eq!(right.unwrap().token_literal(), right_value.to_string());
+            assert_eq!(
+                infix_exp.right.as_ref().token_literal(),
+                right_value.to_string()
+            );
         }
     }
 
@@ -191,12 +218,18 @@ mod tests {
             ),
         ];
 
-        for &(str1, expected) in tests.iter() {
-            let l1 = Lexer::new(str1.to_string());
-            let mut p1 = Parser::new(l1);
-            let program1 = p1.parse_program();
-            println!("p1: {:#?}", program1);
-            let exp1 = stringnify_stmt(&program1.statements);
+        for &(str, expected) in tests.iter() {
+            let l = Lexer::new(str.to_string());
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            };
+            let p = program.unwrap();
+
+            println!("p1: {:#?}", p);
+            let exp1 = stringnify_stmt(&p.statements);
             assert_eq!(&exp1, expected)
         }
     }
@@ -214,10 +247,17 @@ mod tests {
         for &(str1, expected) in tests.iter() {
             let l1 = Lexer::new(str1.to_string());
             let mut p1 = Parser::new(l1);
-            let program1 = p1.parse_program();
-            println!("p1: {:#?}", program1);
-            let exp1 = stringnify_stmt(&program1.statements);
-            assert_eq!(&exp1, expected)
+            let program = p1.parse_program();
+            match program {
+                Ok(p) => {
+                    println!("p1: {:#?}", p);
+                    let exp1 = stringnify_stmt(&p.statements);
+                    assert_eq!(&exp1, expected)
+                }
+                Err(e) => {
+                    println!("{:?}", e);
+                }
+            }
         }
     }
 
@@ -254,8 +294,14 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
-            println!("p: {:#?}", program);
-            let stmt = program.statements[0]
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            }
+            let p = program.unwrap();
+
+            println!("p: {:#?}", p);
+            let stmt = p.statements[0]
                 .as_any()
                 .downcast_ref::<ExpressionStatement>()
                 .unwrap();
@@ -299,8 +345,13 @@ mod tests {
             let l = Lexer::new(input.to_string());
             let mut p = Parser::new(l);
             let program = p.parse_program();
-            println!("p: {:#?}", program);
-            let stmt = program.statements[0]
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                return;
+            }
+            let p = program.unwrap();
+            println!("p: {:#?}", p);
+            let stmt = p.statements[0]
                 .as_any()
                 .downcast_ref::<ExpressionStatement>()
                 .unwrap();

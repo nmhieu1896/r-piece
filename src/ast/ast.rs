@@ -45,16 +45,12 @@ impl Node for Program {
 #[derive(Debug)]
 pub struct LetStatement {
     pub token: TOKEN,
-    pub name: Option<Identifier>, // if name is IDENT(string) => Some(String) else None
-    pub value: Option<Box<dyn Expression>>,
+    pub name: Identifier, // if name is IDENT(string) => Some(String) else None
+    pub value: Box<dyn Expression>,
 }
 impl LetStatement {
-    pub fn new(token: TOKEN) -> Self {
-        Self {
-            token,
-            name: None,
-            value: None,
-        }
+    pub fn new(token: TOKEN, name: Identifier, value: Box<dyn Expression>) -> Self {
+        Self { token, name, value }
     }
 }
 
@@ -72,11 +68,10 @@ impl Node for LetStatement {
         let mut str = String::from("");
         str.push_str(&self.token.literal());
         str.push_str(" ");
-        str.push_str(&self.name.clone().unwrap());
+        str.push_str(&self.name.clone());
         str.push_str(" = ");
-        if self.value.is_some() {
-            str.push_str(&self.value.as_deref().unwrap().to_str());
-        }
+        str.push_str(&self.value.as_ref().to_str());
+
         return str;
     }
 }
@@ -265,11 +260,11 @@ impl Node for FunctionLiteral {
 #[derive(Debug)]
 pub struct PrefixExpression {
     pub token: TOKEN,
-    pub right: Option<Box<dyn Expression>>,
+    pub right: Box<dyn Expression>,
 }
 impl PrefixExpression {
-    pub fn new(token: TOKEN) -> Self {
-        Self { token, right: None }
+    pub fn new(token: TOKEN, right: Box<dyn Expression>) -> Self {
+        Self { token, right }
     }
 }
 impl Expression for PrefixExpression {
@@ -282,7 +277,7 @@ impl Node for PrefixExpression {
     fn to_str(&self) -> String {
         let mut str = String::from("(");
         str.push_str(&self.token.literal());
-        str.push_str(&self.right.as_deref().unwrap().to_str());
+        str.push_str(&self.right.as_ref().to_str());
         str.push(')');
         return str;
     }
@@ -295,14 +290,14 @@ impl Node for PrefixExpression {
 pub struct InfixExpression {
     pub operator: TOKEN,
     pub left: Box<dyn Expression>,
-    pub right: Option<Box<dyn Expression>>,
+    pub right: Box<dyn Expression>,
 }
 impl InfixExpression {
-    pub fn new(left: Box<dyn Expression>, operator: TOKEN) -> Self {
+    pub fn new(left: Box<dyn Expression>, operator: TOKEN, right: Box<dyn Expression>) -> Self {
         Self {
             left: left,
             operator,
-            right: None,
+            right,
         }
     }
 }
@@ -322,7 +317,7 @@ impl Node for InfixExpression {
         str.push_str(" ");
         str.push_str(&self.operator.literal());
         str.push_str(" ");
-        str.push_str(&self.right.as_deref().unwrap().to_str());
+        str.push_str(&self.right.as_ref().to_str());
         str.push(')');
         return str;
     }
