@@ -2,21 +2,45 @@ use std::fmt::Debug;
 
 use crate::lexer::token::TOKEN;
 
+pub enum NodeType {
+    Program,
+    LetStatement,
+    ReturnStatement,
+    ExpressionStatement,
+    BlockStatement,
+    FunctionLiteral,
+    PrefixExpression,
+    InfixExpression,
+    IfExpression,
+    CallExpression,
+    //
+    Identifier,
+    String,
+    Int,
+    Bool,
+}
+
 pub trait Node: Debug {
+    #[allow(unused)]
+    fn as_any(&self) -> &dyn std::any::Any;
     fn token_literal(&self) -> String;
     fn to_str(&self) -> String;
+    fn node_type(&self) -> NodeType;
 }
 
 pub trait Statement: Node {
-    #[allow(unused)]
-    fn as_any(&self) -> &dyn std::any::Any;
+    // #[allow(unused)]
+    // fn as_any(&self) -> &dyn std::any::Any;
     #[allow(unused)]
     fn statement_node(&self);
+    fn upcast(self: Box<dyn Statement>) -> Box<dyn Node> {
+        self
+    }
 }
 
 pub trait Expression: Node {
-    #[allow(unused)]
-    fn as_any(&self) -> &dyn std::any::Any;
+    // #[allow(unused)]
+    // fn as_any(&self) -> &dyn std::any::Any;
     #[allow(unused)]
     fn expression_node(&self);
 }
@@ -30,6 +54,12 @@ pub struct Program {
 }
 
 impl Node for Program {
+    fn node_type(&self) -> NodeType {
+        NodeType::Program
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
             self.statements[0].token_literal()
@@ -55,12 +85,15 @@ impl LetStatement {
 }
 
 impl Statement for LetStatement {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn statement_node(&self) {}
 }
 impl Node for LetStatement {
+    fn node_type(&self) -> NodeType {
+        NodeType::LetStatement
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         self.token.literal()
     }
@@ -90,12 +123,15 @@ impl ReturnStatement {
     }
 }
 impl Statement for ReturnStatement {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn statement_node(&self) {}
 }
 impl Node for ReturnStatement {
+    fn node_type(&self) -> NodeType {
+        NodeType::ReturnStatement
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         self.token.literal()
     }
@@ -124,12 +160,15 @@ impl ExpressionStatement {
     }
 }
 impl Statement for ExpressionStatement {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn statement_node(&self) {}
 }
 impl Node for ExpressionStatement {
+    fn node_type(&self) -> NodeType {
+        NodeType::ExpressionStatement
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         self.token.literal()
     }
@@ -154,6 +193,12 @@ impl BlockStatement {
     }
 }
 impl Node for BlockStatement {
+    fn node_type(&self) -> NodeType {
+        NodeType::BlockStatement
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         "{}".to_string()
     }
@@ -171,12 +216,15 @@ impl Node for BlockStatement {
 //PRIMITIVE String
 pub type Identifier = String;
 impl Expression for Identifier {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for Identifier {
+    fn node_type(&self) -> NodeType {
+        NodeType::Identifier
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn to_str(&self) -> String {
         self.clone()
     }
@@ -187,12 +235,15 @@ impl Node for Identifier {
 //PRIMITIVE number
 pub type Integer = i64;
 impl Expression for Integer {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for Integer {
+    fn node_type(&self) -> NodeType {
+        NodeType::Int
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn to_str(&self) -> String {
         self.to_string()
     }
@@ -203,12 +254,15 @@ impl Node for Integer {
 //PRIMITIVE Boolean
 pub type Boolean = bool;
 impl Expression for Boolean {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for Boolean {
+    fn node_type(&self) -> NodeType {
+        NodeType::Bool
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn to_str(&self) -> String {
         self.to_string()
     }
@@ -231,12 +285,15 @@ impl FunctionLiteral {
     }
 }
 impl Expression for FunctionLiteral {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for FunctionLiteral {
+    fn node_type(&self) -> NodeType {
+        NodeType::FunctionLiteral
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn to_str(&self) -> String {
         let mut str = String::from("fn(");
 
@@ -268,12 +325,15 @@ impl PrefixExpression {
     }
 }
 impl Expression for PrefixExpression {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for PrefixExpression {
+    fn node_type(&self) -> NodeType {
+        NodeType::PrefixExpression
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn to_str(&self) -> String {
         let mut str = String::from("(");
         str.push_str(&self.token.literal());
@@ -302,12 +362,15 @@ impl InfixExpression {
     }
 }
 impl Expression for InfixExpression {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for InfixExpression {
+    fn node_type(&self) -> NodeType {
+        NodeType::InfixExpression
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         self.operator.literal()
     }
@@ -339,12 +402,15 @@ impl IfExpression {
     }
 }
 impl Expression for IfExpression {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for IfExpression {
+    fn node_type(&self) -> NodeType {
+        NodeType::IfExpression
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         "IF".to_string()
     }
@@ -374,12 +440,15 @@ impl CallExpression {
     }
 }
 impl Expression for CallExpression {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn expression_node(&self) {}
 }
 impl Node for CallExpression {
+    fn node_type(&self) -> NodeType {
+        NodeType::CallExpression
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn token_literal(&self) -> String {
         "CALL".to_string()
     }

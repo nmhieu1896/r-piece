@@ -1,3 +1,5 @@
+use std::mem::discriminant;
+
 use thiserror::Error;
 
 use crate::lexer::token::TOKEN;
@@ -30,4 +32,11 @@ pub enum ParseErr {
     BLOCK(String, TOKEN),
     #[error("None")]
     None,
+}
+
+impl ParseErr {
+    #[allow(unused)]
+    pub fn match_err(&self, err: ParseErr) -> bool {
+        return discriminant(self) == discriminant(&err);
+    }
 }

@@ -1,5 +1,6 @@
 mod ast;
 mod errors;
+mod evaluator;
 mod lexer;
 mod parser;
 mod repl;
