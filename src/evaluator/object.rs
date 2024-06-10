@@ -17,4 +17,10 @@ impl Object {
             _ => Err(CoerceErr::ToInt(self.clone().into())),
         }
     }
+    pub fn as_bool(&self) -> Result<bool, CoerceErr> {
+        match self {
+            Object::Boolean(b) => Ok(*b),
+            _ => Err(CoerceErr::ToBool(self.clone().into())),
+        }
+    }
 }

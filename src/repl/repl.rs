@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 
+#[allow(unused)]
 use crate::{
     ast::ast::stringnify_stmt, evaluator::eval, lexer::lexer::Lexer, parser::parser::Parser,
 };
@@ -27,8 +28,13 @@ pub fn run_repl() {
         let program = p.parse_program();
         match program {
             Ok(p) => {
-                println!("{:?}", stringnify_stmt(&p.statements));
-                eval::eval(&p).unwrap();
+                // println!("{:?}", stringnify_stmt(&p.statements));
+                let x = eval::eval(&p);
+                if x.is_err() {
+                    println!("{:?}", x.unwrap_err().to_string());
+                } else {
+                    println!("{:?}", x);
+                }
             }
             Err(e) => println!("{:?}", e),
         }

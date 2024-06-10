@@ -10,6 +10,8 @@ pub enum CoerceErr {
     ToInt(Object),
     #[error("String Error: Can not coerce {0:?} to Identifier")]
     ToIdentifier(Object),
+    #[error("Bool Error: Can not coerce {0:?} to BOOL")]
+    ToBool(Object),
 }
 
 impl CoerceErr {
