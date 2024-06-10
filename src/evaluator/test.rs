@@ -13,7 +13,7 @@ mod tests {
         let mut p = Parser::new(l);
         let program = p.parse_program()?;
 
-        let obj = eval(Box::new(program))?;
+        let obj = eval(&program)?;
         return Ok(obj);
     }
 

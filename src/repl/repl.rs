@@ -1,6 +1,8 @@
 use std::io::{self, Write};
 
-use crate::{ast::ast::stringnify_stmt, lexer::lexer::Lexer, parser::parser::Parser};
+use crate::{
+    ast::ast::stringnify_stmt, evaluator::eval, lexer::lexer::Lexer, parser::parser::Parser,
+};
 
 pub fn run_repl() {
     println!("Welcome to the REPL CLI. Type 'exit' to quit.");
@@ -24,7 +26,10 @@ pub fn run_repl() {
 
         let program = p.parse_program();
         match program {
-            Ok(p) => println!("{:?}", stringnify_stmt(&p.statements)),
+            Ok(p) => {
+                println!("{:?}", stringnify_stmt(&p.statements));
+                eval::eval(&p).unwrap();
+            }
             Err(e) => println!("{:?}", e),
         }
     }

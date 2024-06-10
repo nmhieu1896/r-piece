@@ -1,19 +1,26 @@
-use std::{ops::Deref, os::macos::raw::stat};
-
 use crate::{
-    ast::ast::{Integer, Node, NodeType, Program, Statement},
+    ast::ast::{upcast_trait, ExpressionStatement, Integer, Node, NodeType, Program, Statement},
     errors::eval_errs::EvalErr,
 };
 
 use super::object::Object;
 
-pub fn eval(node: &Box<dyn Node>) -> Result<Object, EvalErr> {
-    println!("{:?}", node);
+pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
     match node.node_type() {
         NodeType::Program => {
             return eval_statement(&node.as_any().downcast_ref::<Program>().unwrap().statements)
         }
-        NodeType::String => {
+        NodeType::ExpressionStatement => {
+            return eval(
+                node.as_any()
+                    .downcast_ref::<ExpressionStatement>()
+                    .unwrap()
+                    .expression
+                    .as_deref()
+                    .unwrap(),
+            )
+        }
+        NodeType::Identifier => {
             return Ok(Object::String(
                 node.as_any().downcast_ref::<String>().unwrap().clone(),
             ))
@@ -34,10 +41,12 @@ pub fn eval(node: &Box<dyn Node>) -> Result<Object, EvalErr> {
 
 fn eval_statement(statements: &Vec<Box<dyn Statement>>) -> Result<Object, EvalErr> {
     let mut result = Object::Null;
-    for &stmt in statements.iter() {
-        let node: Box<dyn Node> = stmt;
-
-        // result = eval(stmt)?;
+    let vec = statements
+        .iter()
+        .map(|x| upcast_trait(x.as_ref()))
+        .collect::<Vec<&dyn Node>>();
+    for &stmt in vec.iter() {
+        result = eval(stmt)?;
     }
 
     return Ok(result);

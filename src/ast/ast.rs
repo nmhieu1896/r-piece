@@ -1,7 +1,8 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::Unsize};
 
 use crate::lexer::token::TOKEN;
 
+#[derive(Debug)]
 pub enum NodeType {
     Program,
     LetStatement,
@@ -15,7 +16,6 @@ pub enum NodeType {
     CallExpression,
     //
     Identifier,
-    String,
     Int,
     Bool,
 }
@@ -27,15 +27,14 @@ pub trait Node: Debug {
     fn to_str(&self) -> String;
     fn node_type(&self) -> NodeType;
 }
-
+pub fn upcast_trait<Dyn: ?Sized + Unsize<dyn Node>>(bar: &Dyn) -> &dyn Node {
+    bar
+}
 pub trait Statement: Node {
     // #[allow(unused)]
     // fn as_any(&self) -> &dyn std::any::Any;
     #[allow(unused)]
     fn statement_node(&self);
-    fn upcast(self: Box<dyn Statement>) -> Box<dyn Node> {
-        self
-    }
 }
 
 pub trait Expression: Node {

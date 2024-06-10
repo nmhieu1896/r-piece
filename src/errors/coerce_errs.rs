@@ -8,8 +8,8 @@ use crate::evaluator::object::Object;
 pub enum CoerceErr {
     #[error("Int Error: Can not coerce {0:?} to INT")]
     ToInt(Object),
-    #[error("String Error: Can not coerce {0:?} to STRING")]
-    ToString(Object),
+    #[error("String Error: Can not coerce {0:?} to Identifier")]
+    ToIdentifier(Object),
 }
 
 impl CoerceErr {

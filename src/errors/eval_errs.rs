@@ -2,8 +2,6 @@ use std::mem::discriminant;
 
 use thiserror::Error;
 
-use crate::ast::ast::Node;
-
 #[derive(Debug, Error)]
 pub enum EvalErr {
     #[error("Not Implemented")]
