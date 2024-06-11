@@ -1,7 +1,7 @@
 use crate::{
     ast::ast::{
-        upcast_trait, Boolean, ExpressionStatement, InfixExpression, Integer, Node, NodeType,
-        PrefixExpression, Program, Statement,
+        upcast_trait, BlockStatement, Boolean, ExpressionStatement, Identifier, IfExpression,
+        InfixExpression, Integer, Node, NodeType, PrefixExpression, Program, Statement,
     },
     errors::eval_errs::EvalErr,
     lexer::token::TOKEN,
@@ -12,7 +12,7 @@ use super::object::Object;
 pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
     match node.node_type() {
         NodeType::Program => {
-            return eval_statement(&node.as_any().downcast_ref::<Program>().unwrap().statements)
+            return eval_statements(&node.as_any().downcast_ref::<Program>().unwrap().statements)
         }
         NodeType::ExpressionStatement => {
             let expr = node
@@ -38,9 +38,17 @@ pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
                 eval(expr.right.as_ref())?,
             );
         }
+        NodeType::IfExpression => {
+            let expr = node.as_any().downcast_ref::<IfExpression>().unwrap();
+            return eval_if_expression(expr);
+        }
+        NodeType::BlockStatement => {
+            let expr = node.as_any().downcast_ref::<BlockStatement>().unwrap();
+            return eval_statements(&expr.statements);
+        }
         NodeType::Identifier => {
-            return Ok(Object::String(
-                node.as_any().downcast_ref::<String>().unwrap().clone(),
+            return Ok(Object::Identifier(
+                node.as_any().downcast_ref::<Identifier>().unwrap().clone(),
             ))
         }
         NodeType::Int => {
@@ -62,7 +70,7 @@ pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
     }
 }
 
-fn eval_statement(statements: &Vec<Box<dyn Statement>>) -> Result<Object, EvalErr> {
+fn eval_statements(statements: &Vec<Box<dyn Statement>>) -> Result<Object, EvalErr> {
     let mut result = Object::Null;
     let vec = statements
         .iter()
@@ -117,6 +125,7 @@ fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result
         TOKEN::PLUS => Ok(Object::Number(left.as_int()? + right.as_int()?)),
         TOKEN::MINUS => Ok(Object::Number(left.as_int()? - right.as_int()?)),
         TOKEN::ASTERISK => Ok(Object::Number(left.as_int()? * right.as_int()?)),
+        TOKEN::SLASH if right.as_int()? == 0 => Err(EvalErr::DivideByZero),
         TOKEN::SLASH => Ok(Object::Number(left.as_int()? / right.as_int()?)),
         TOKEN::GT => Ok(Object::Boolean(left.as_int()? > right.as_int()?)),
         TOKEN::LT => Ok(Object::Boolean(left.as_int()? < right.as_int()?)),
@@ -127,4 +136,15 @@ fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result
             operator
         ))),
     }
+}
+
+fn eval_if_expression(expression: &IfExpression) -> Result<Object, EvalErr> {
+    let condition = eval(expression.condition.as_ref())?;
+    if condition.as_bool()? {
+        return eval_statements(&expression.consequence.statements);
+    }
+    if let Some(alternative) = &expression.alternative {
+        return eval_statements(&alternative.statements);
+    }
+    return Ok(Object::Null);
 }

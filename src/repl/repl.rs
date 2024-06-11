@@ -33,7 +33,7 @@ pub fn run_repl() {
                 if x.is_err() {
                     println!("{:?}", x.unwrap_err().to_string());
                 } else {
-                    println!("{:?}", x);
+                    println!("{:?}", x.unwrap());
                 }
             }
             Err(e) => println!("{:?}", e),

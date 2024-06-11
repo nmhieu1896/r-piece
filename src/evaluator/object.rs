@@ -1,10 +1,11 @@
 use crate::errors::coerce_errs::CoerceErr;
 
 #[allow(unused)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Number(i64),
-    String(String),
+    Identifier(String),
+    // String(String),
     Boolean(bool),
     Null,
     Function(fn(Vec<Object>) -> Object),

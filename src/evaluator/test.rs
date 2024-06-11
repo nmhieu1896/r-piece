@@ -17,120 +17,84 @@ mod tests {
         return Ok(obj);
     }
 
-    fn test_int_object(obj: Object, expected: i64) -> Result<(), Error> {
-        println!("OBJECT: {:?}", obj);
-        let int_value = obj.as_int()?;
-        if int_value == expected {
-            return Ok(());
-        }
-        return Err(anyhow::anyhow!(
-            "Expected {:?} but got {:?}",
-            expected,
-            int_value
-        ));
-    }
-
-    fn test_bool_object(obj: Object, expected: bool) -> Result<(), Error> {
-        println!("OBJECT: {:?}", obj);
-        let bool_value = obj.as_bool()?;
-        if bool_value == expected {
-            return Ok(());
-        }
-        return Err(anyhow::anyhow!(
-            "Expected {:?} but got {:?}",
-            expected,
-            bool_value
-        ));
-    }
-
     #[test]
     fn test_eval_int() {
         let test = vec![
-            ("5", 5),
-            ("-5", -5),
-            ("10", 10),
-            ("-10", -10),
-            ("0", 0),
-            ("-0", -0),
+            ("5", Object::Number(5)),
+            ("-5", Object::Number(-5)),
+            ("10", Object::Number(10)),
+            ("-10", Object::Number(-10)),
+            ("0", Object::Number(0)),
+            ("-0", Object::Number(-0)),
+            ("5 + 5", Object::Number(10)),
+            ("5 - 5", Object::Number(0)),
+            ("5 * 5", Object::Number(25)),
+            ("5 / 5", Object::Number(1)),
+            ("5 + 5 + 5 + 5 - 10", Object::Number(10)),
+            ("2 * 2 * 2 * 2 * 2", Object::Number(32)),
+            ("-50 + 100 + -50", Object::Number(0)),
+            ("5 * 2 + 10", Object::Number(20)),
+            ("5 + 2 * 10", Object::Number(25)),
+            ("20 + 2 * -10", Object::Number(0)),
+            ("50 / 2 * 2 + 10", Object::Number(60)),
+            ("2 * (5 + 10)", Object::Number(30)),
+            ("3 * 3 * 3 + 10", Object::Number(37)),
+            ("3 * (3 * 3) + 10", Object::Number(37)),
+            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", Object::Number(50)),
         ];
-        for &(input, expected) in test.iter() {
+        for (input, expected) in test.into_iter() {
             let obj = test_eval(input).unwrap();
-            let res = test_int_object(obj, expected);
-            println!("{:?}", res);
-            assert!(res.is_ok());
+            assert_eq!(obj, expected);
         }
     }
 
     #[test]
     fn test_eval_bool() {
-        let test = vec![("true", true), ("false", false)];
-        for &(input, expected) in test.iter() {
-            let obj = test_eval(input).unwrap();
-            let res = test_bool_object(obj, expected);
-            println!("{:?}", res);
-            assert!(res.is_ok());
-        }
-    }
-    #[test]
-    fn test_bang_operator() {
         let test = vec![
-            ("!true", false),
-            ("!false", true),
-            ("!5", false),
-            ("!!true", true),
-            ("!!false", false),
-            ("!!5", true),
+            ("!true", Object::Boolean(false)),
+            ("!false", Object::Boolean(true)),
+            ("!5", Object::Boolean(false)),
+            ("!!true", Object::Boolean(true)),
+            ("!!false", Object::Boolean(false)),
+            ("!!5", Object::Boolean(true)),
+            ("5 > 5", Object::Boolean(false)),
+            ("5 < 5", Object::Boolean(false)),
+            ("5 == 5", Object::Boolean(true)),
+            ("5 != 5", Object::Boolean(false)),
+            ("true == true", Object::Boolean(true)),
+            ("false == false", Object::Boolean(true)),
+            ("false == true", Object::Boolean(false)),
+            ("true != true", Object::Boolean(false)),
+            ("false != false", Object::Boolean(false)),
+            ("false != true", Object::Boolean(true)),
+            ("(1 < 2) == true", Object::Boolean(true)),
+            ("(1 < 2) == false", Object::Boolean(false)),
+            ("(1 > 2) == true", Object::Boolean(false)),
+            ("(1 > 2) == false", Object::Boolean(true)),
         ];
-        for &(input, expected) in test.iter() {
+        for (input, expected) in test.into_iter() {
             let obj = test_eval(input).unwrap();
-            let res = test_bool_object(obj, expected);
-            println!("{:?}", res);
-            assert!(res.is_ok());
+            assert_eq!(obj, expected);
         }
     }
 
     #[test]
-    fn test_infix_operator() {
-        let test1 = vec![
-            ("5 + 5", 10),
-            ("5 - 5", 0),
-            ("5 * 5", 25),
-            ("5 / 5", 1),
-            ("5 + 5 + 5 + 5 - 10", 10),
-            ("2 * 2 * 2 * 2 * 2", 32),
-            ("-50 + 100 + -50", 0),
-            ("5 * 2 + 10", 20),
-            ("5 + 2 * 10", 25),
-            ("20 + 2 * -10", 0),
-            ("50 / 2 * 2 + 10", 60),
-            ("2 * (5 + 10)", 30),
-            ("3 * 3 * 3 + 10", 37),
-            ("3 * (3 * 3) + 10", 37),
-            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
+    fn test_eval_if() {
+        let test = vec![
+            ("if (true) { 5 }", Object::Number(5)),
+            ("if (false) { 5 }", Object::Null),
+            ("if (10 > 5) { 5 }", Object::Number(5)),
+            ("if (5 > 10) { 5 }", Object::Null),
+            ("if (5 == 5) { 5 }", Object::Number(5)),
+            ("if (1 < 2) { 10 }", Object::Number(10)),
+            ("if (1 > 2) { 10 }", Object::Null),
+            ("if (1 > 2) { 10 } else { 20 }", Object::Number(20)),
+            ("if (1 < 2) { 10 } else { 20 }", Object::Number(10)),
         ];
-        let test2 = vec![
-            ("5 > 5", false),
-            ("5 < 5", false),
-            ("5 == 5", true),
-            ("5 != 5", false),
-            ("true == true", true),
-            ("false == false", true),
-            ("false == true", false),
-            ("true != true", false),
-            ("false != false", false),
-            ("false != true", true),
-        ];
-        for &(input, expected) in test1.iter() {
+        for (input, expected) in test.into_iter() {
             let obj = test_eval(input).unwrap();
-            let res = test_int_object(obj, expected);
-            println!("{:?}", res);
-            assert!(res.is_ok());
-        }
-        for &(input, expected) in test2.iter() {
-            let obj = test_eval(input).unwrap();
-            let res = test_bool_object(obj, expected);
-            println!("{:?}", res);
-            assert!(res.is_ok());
+            println!("{:?}", obj);
+            assert_eq!(obj, expected.clone());
         }
     }
 }

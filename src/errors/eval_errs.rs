@@ -14,12 +14,13 @@ pub enum EvalErr {
     MinusPrefix(Object),
     #[error("{0} ")]
     CoerceErr(#[from] CoerceErr),
+    #[error("Cannot divide by zero")]
+    DivideByZero,
 }
 
 impl EvalErr {
     #[allow(unused)]
     pub fn match_err(&self, err: EvalErr) -> bool {
-        // Check 2 token are same type without checking the value inside
         return discriminant(self) == discriminant(&err);
     }
 }
