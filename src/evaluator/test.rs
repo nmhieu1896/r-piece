@@ -3,7 +3,7 @@ mod tests {
     use anyhow::Error;
 
     use crate::{
-        evaluator::{eval::*, object::Object},
+        evaluator::{environment::Environment, eval::*, object::Object},
         lexer::lexer::Lexer,
         parser::parser::Parser,
     };
@@ -12,8 +12,9 @@ mod tests {
         let l = Lexer::new(input.to_string());
         let mut p = Parser::new(l);
         let program = p.parse_program()?;
+        let mut env = Environment::new();
 
-        let obj = eval(&program)?;
+        let obj = eval(&program, &mut env)?;
         return Ok(obj);
     }
 
@@ -126,6 +127,32 @@ mod tests {
                 Object::Return(obj) => assert_eq!(obj.as_ref(), &expected),
                 anything => assert_eq!(anything, expected),
             }
+        }
+    }
+
+    #[test]
+    fn test_let_stmt() {
+        let test = vec![
+            ("let a = 5; a", Object::Number(5)),
+            ("let a = 5 * 1; let b = a; b", Object::Number(5)),
+            ("let a = 5 + 0; let b = a; let c = b; c", Object::Number(5)),
+            ("let a = 5; let b = a + 1; b", Object::Number(6)),
+            (
+                "let a = 5; let b = a + 1; let c = b + 1; c",
+                Object::Number(7),
+            ),
+            (
+                "let a = 5; let b = a + 1; let c = b + 1; let d = c * 2; d",
+                Object::Number(14),
+            ),
+            (
+                "let a = 5; let b = !a; let c = !b; c",
+                Object::Boolean(true),
+            ),
+        ];
+        for (input, expected) in test.into_iter() {
+            let obj = test_eval(input).unwrap();
+            assert_eq!(obj, expected);
         }
     }
 }

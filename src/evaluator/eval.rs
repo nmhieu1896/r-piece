@@ -1,19 +1,22 @@
 use crate::{
     ast::ast::{
         upcast_trait, BlockStatement, Boolean, ExpressionStatement, Identifier, IfExpression,
-        InfixExpression, Integer, Node, NodeType, PrefixExpression, Program, ReturnStatement,
-        Statement,
+        InfixExpression, Integer, LetStatement, Node, NodeType, PrefixExpression, Program,
+        ReturnStatement, Statement,
     },
     errors::eval_errs::EvalErr,
     lexer::token::TOKEN,
 };
 
-use super::object::Object;
+use super::{environment::Environment, object::Object};
 
-pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
+pub fn eval(node: &dyn Node, env: &mut Environment) -> Result<Object, EvalErr> {
     match node.node_type() {
         NodeType::Program => {
-            return eval_statements(&node.as_any().downcast_ref::<Program>().unwrap().statements)
+            return eval_statements(
+                &node.as_any().downcast_ref::<Program>().unwrap().statements,
+                env,
+            )
         }
         NodeType::ExpressionStatement => {
             let expr = node
@@ -25,18 +28,18 @@ pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
             if expr.is_none() {
                 return Ok(Object::Null);
             }
-            return eval(expr.unwrap());
+            return eval(expr.unwrap(), env);
         }
         NodeType::PrefixExpression => {
             let expr = node.as_any().downcast_ref::<PrefixExpression>().unwrap();
-            return eval_prefix_expression(expr.token.clone(), eval(expr.right.as_ref())?);
+            return eval_prefix_expression(expr.token.clone(), eval(expr.right.as_ref(), env)?);
         }
         NodeType::InfixExpression => {
             let expr = node.as_any().downcast_ref::<InfixExpression>().unwrap();
             return eval_infix_expression(
                 expr.operator.clone(),
-                eval(expr.left.as_ref())?,
-                eval(expr.right.as_ref())?,
+                eval(expr.left.as_ref(), env)?,
+                eval(expr.right.as_ref(), env)?,
             );
         }
         NodeType::ReturnStatement => {
@@ -46,20 +49,30 @@ pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
             }
             return Ok(Object::Return(Box::new(eval(
                 expr.expression.as_deref().unwrap(),
+                env,
             )?)));
         }
         NodeType::IfExpression => {
             let expr = node.as_any().downcast_ref::<IfExpression>().unwrap();
-            return eval_if_expression(expr);
+            return eval_if_expression(expr, env);
         }
         NodeType::BlockStatement => {
             let expr = node.as_any().downcast_ref::<BlockStatement>().unwrap();
-            return eval_statements(&expr.statements);
+            return eval_statements(&expr.statements, env);
+        }
+        NodeType::LetStatement => {
+            let expr = node.as_any().downcast_ref::<LetStatement>().unwrap();
+            let value = eval(expr.value.as_ref(), env)?;
+            env.set(expr.name.clone(), value);
+            return Ok(Object::Null);
         }
         NodeType::Identifier => {
-            return Ok(Object::Identifier(
-                node.as_any().downcast_ref::<Identifier>().unwrap().clone(),
-            ))
+            let key = node.as_any().downcast_ref::<Identifier>().unwrap().clone();
+            let value = env.get(&key);
+            if value.is_none() {
+                return Err(EvalErr::IdentifierNotFound(key));
+            }
+            return Ok(value.unwrap().clone());
         }
         NodeType::Int => {
             return Ok(Object::Number(
@@ -80,14 +93,17 @@ pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
     }
 }
 
-fn eval_statements(statements: &Vec<Box<dyn Statement>>) -> Result<Object, EvalErr> {
+fn eval_statements(
+    statements: &Vec<Box<dyn Statement>>,
+    env: &mut Environment,
+) -> Result<Object, EvalErr> {
     let mut result = Object::Null;
     let vec = statements
         .iter()
         .map(|x| upcast_trait(x.as_ref()))
         .collect::<Vec<&dyn Node>>();
     for &stmt in vec.iter() {
-        result = eval(stmt)?;
+        result = eval(stmt, env)?;
         if result.is_return() {
             return Ok(result);
         }
@@ -166,13 +182,13 @@ fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result
     }
 }
 
-fn eval_if_expression(expression: &IfExpression) -> Result<Object, EvalErr> {
-    let condition = eval(expression.condition.as_ref())?;
+fn eval_if_expression(expression: &IfExpression, env: &mut Environment) -> Result<Object, EvalErr> {
+    let condition = eval(expression.condition.as_ref(), env)?;
     if is_truthy(condition) {
-        return eval_statements(&expression.consequence.statements);
+        return eval_statements(&expression.consequence.statements, env);
     }
     if let Some(alternative) = &expression.alternative {
-        return eval_statements(&alternative.statements);
+        return eval_statements(&alternative.statements, env);
     }
     return Ok(Object::Null);
 }

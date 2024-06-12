@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 
+use crate::evaluator::environment::Environment;
 #[allow(unused)]
 use crate::{
     ast::ast::stringnify_stmt, evaluator::eval, lexer::lexer::Lexer, parser::parser::Parser,
@@ -7,6 +8,7 @@ use crate::{
 
 pub fn run_repl() {
     println!("Welcome to the REPL CLI. Type 'exit' to quit.");
+    let mut env = Environment::new();
 
     loop {
         print!(">> ");
@@ -29,7 +31,7 @@ pub fn run_repl() {
         match program {
             Ok(p) => {
                 // println!("{:?}", stringnify_stmt(&p.statements));
-                let x = eval::eval(&p);
+                let x = eval::eval(&p, &mut env);
                 if x.is_err() {
                     println!("{:?}", x.unwrap_err().to_string());
                 } else {

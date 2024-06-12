@@ -16,6 +16,8 @@ pub enum EvalErr {
     CoerceErr(#[from] CoerceErr),
     #[error("Cannot divide by zero")]
     DivideByZero,
+    #[error("Identifier {0} not found")]
+    IdentifierNotFound(String),
 }
 
 impl EvalErr {
