@@ -1,21 +1,20 @@
 #[cfg(test)]
 mod tests {
-    use anyhow::Error;
 
     use crate::{
+        errors::eval_errs::EvalErr,
         evaluator::{environment::Environment, eval::*, object::Object},
         lexer::lexer::Lexer,
         parser::parser::Parser,
     };
 
-    fn test_eval(input: &str) -> Result<Object, Error> {
+    fn test_eval(input: &str) -> Result<Object, EvalErr> {
         let l = Lexer::new(input.to_string());
         let mut p = Parser::new(l);
-        let program = p.parse_program()?;
+        let program = p.parse_program().unwrap();
         let mut env = Environment::new();
 
-        let obj = eval(&program, &mut env)?;
-        return Ok(obj);
+        return eval(&program, &mut env);
     }
 
     #[test]
@@ -125,7 +124,7 @@ mod tests {
             let obj = test_eval(input).unwrap();
             match obj {
                 Object::Return(obj) => assert_eq!(obj.as_ref(), &expected),
-                anything => assert_eq!(anything, expected),
+                anything => assert_eq!(anything, Object::Return(Box::new(expected))),
             }
         }
     }

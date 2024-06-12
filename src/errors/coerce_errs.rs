@@ -2,18 +2,18 @@ use std::mem::discriminant;
 
 use thiserror::Error;
 
-use crate::{evaluator::object::Object, lexer::token::TOKEN};
+use crate::lexer::token::TOKEN;
 
 #[derive(Debug, Error)]
 pub enum CoerceErr {
-    #[error("Int Error: Can not coerce {0:?} to INT")]
-    ToInt(Object),
+    #[error("Int Error: Can not coerce {0} to INT")]
+    ToInt(String),
     #[error("Operator Error: {0:?} Cant be used with {1:?}")]
-    Operator(Object, TOKEN),
+    Operator(String, TOKEN),
     // #[error("Identifier Error: Can not coerce {0:?} to Identifier")]
     // ToIdentifier(Object),
     #[error("Bool Error: Can not coerce {0:?} to BOOL")]
-    ToBool(Object),
+    ToBool(String),
 }
 
 impl CoerceErr {

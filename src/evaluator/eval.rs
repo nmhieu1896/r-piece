@@ -10,7 +10,7 @@ use crate::{
 
 use super::{environment::Environment, object::Object};
 
-pub fn eval(node: &dyn Node, env: &mut Environment) -> Result<Object, EvalErr> {
+pub fn eval<'a>(node: &dyn Node, env: &mut Environment<'a>) -> Result<Object<'a>, EvalErr> {
     match node.node_type() {
         NodeType::Program => {
             return eval_statements(
@@ -36,11 +36,9 @@ pub fn eval(node: &dyn Node, env: &mut Environment) -> Result<Object, EvalErr> {
         }
         NodeType::InfixExpression => {
             let expr = node.as_any().downcast_ref::<InfixExpression>().unwrap();
-            return eval_infix_expression(
-                expr.operator.clone(),
-                eval(expr.left.as_ref(), env)?,
-                eval(expr.right.as_ref(), env)?,
-            );
+            let left = eval(expr.left.as_ref(), env)?;
+            let right = eval(expr.right.as_ref(), env)?;
+            return eval_infix_expression(expr.operator.clone(), left, right);
         }
         NodeType::ReturnStatement => {
             let expr = node.as_any().downcast_ref::<ReturnStatement>().unwrap();
@@ -72,6 +70,7 @@ pub fn eval(node: &dyn Node, env: &mut Environment) -> Result<Object, EvalErr> {
             if value.is_none() {
                 return Err(EvalErr::IdentifierNotFound(key));
             }
+
             return Ok(value.unwrap().clone());
         }
         NodeType::Int => {
@@ -93,10 +92,10 @@ pub fn eval(node: &dyn Node, env: &mut Environment) -> Result<Object, EvalErr> {
     }
 }
 
-fn eval_statements(
+fn eval_statements<'a>(
     statements: &Vec<Box<dyn Statement>>,
-    env: &mut Environment,
-) -> Result<Object, EvalErr> {
+    env: &mut Environment<'a>,
+) -> Result<Object<'a>, EvalErr> {
     let mut result = Object::Null;
     let vec = statements
         .iter()
@@ -117,7 +116,7 @@ fn eval_prefix_expression(operator: TOKEN, right: Object) -> Result<Object, Eval
         TOKEN::BANG => Ok(eval_bang_expression(right)),
         TOKEN::MINUS => match right {
             Object::Number(n) => Ok(Object::Number(-n)),
-            _ => Err(EvalErr::MinusPrefix(right)),
+            _ => Err(EvalErr::MinusPrefix(format!("{:?}", right))),
         },
         _ => Err(EvalErr::NotImplemented(format!(
             "{:?} is not implemented for prefix expression",
@@ -137,7 +136,11 @@ fn is_truthy(value: Object) -> bool {
 fn eval_bang_expression(value: Object) -> Object {
     Object::Boolean(!is_truthy(value))
 }
-fn eval_eq_expression(operator: TOKEN, left: Object, right: Object) -> Result<Object, EvalErr> {
+fn eval_eq_expression<'a>(
+    operator: TOKEN,
+    left: Object<'a>,
+    right: Object<'a>,
+) -> Result<Object<'a>, EvalErr> {
     match left {
         Object::Number(n) if operator == TOKEN::EQ => Ok(Object::Boolean(n == right.as_int()?)),
         Object::Number(n) if operator == TOKEN::NotEQ => Ok(Object::Boolean(n != right.as_int()?)),
@@ -152,7 +155,11 @@ fn eval_eq_expression(operator: TOKEN, left: Object, right: Object) -> Result<Ob
     }
 }
 
-fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result<Object, EvalErr> {
+fn eval_infix_expression<'a>(
+    operator: TOKEN,
+    left: Object<'a>,
+    right: Object<'a>,
+) -> Result<Object<'a>, EvalErr> {
     match operator {
         TOKEN::PLUS => Ok(Object::Number(
             left.as_int_with(TOKEN::PLUS)? + right.as_int_with(TOKEN::PLUS)?,
@@ -182,7 +189,10 @@ fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result
     }
 }
 
-fn eval_if_expression(expression: &IfExpression, env: &mut Environment) -> Result<Object, EvalErr> {
+fn eval_if_expression<'a>(
+    expression: &IfExpression,
+    env: &mut Environment<'a>,
+) -> Result<Object<'a>, EvalErr> {
     let condition = eval(expression.condition.as_ref(), env)?;
     if is_truthy(condition) {
         return eval_statements(&expression.consequence.statements, env);
