@@ -43,7 +43,7 @@ pub fn eval<'a>(node: &dyn Node, env: &mut Environment<'a>) -> Result<Object<'a>
         NodeType::ReturnStatement => {
             let expr = node.as_any().downcast_ref::<ReturnStatement>().unwrap();
             if expr.expression.is_none() {
-                return Ok(Object::Null);
+                return Ok(Object::Return(Box::new(Object::Null)));
             }
             return Ok(Object::Return(Box::new(eval(
                 expr.expression.as_deref().unwrap(),
