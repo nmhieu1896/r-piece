@@ -97,4 +97,35 @@ mod tests {
             assert_eq!(obj, expected.clone());
         }
     }
+
+    #[test]
+    fn test_eval_return() {
+        let test = vec![
+            ("return 5", Object::Number(5)),
+            ("9;return 2*5", Object::Number(10)),
+            ("9;return 2*5;9", Object::Number(10)),
+            ("return true", Object::Boolean(true)),
+            ("return false", Object::Boolean(false)),
+            (
+                "#
+                if (10 > 1) {
+                    if (10 > 1) {
+                        return 10;
+                    }
+                    return 1;
+                }
+                return 5;
+            #",
+                Object::Number(10),
+            ),
+            ("return", Object::Null),
+        ];
+        for (input, expected) in test.into_iter() {
+            let obj = test_eval(input).unwrap();
+            match obj {
+                Object::Return(obj) => assert_eq!(obj.as_ref(), &expected),
+                anything => assert_eq!(anything, expected),
+            }
+        }
+    }
 }

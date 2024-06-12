@@ -1,7 +1,8 @@
 use crate::{
     ast::ast::{
         upcast_trait, BlockStatement, Boolean, ExpressionStatement, Identifier, IfExpression,
-        InfixExpression, Integer, Node, NodeType, PrefixExpression, Program, Statement,
+        InfixExpression, Integer, Node, NodeType, PrefixExpression, Program, ReturnStatement,
+        Statement,
     },
     errors::eval_errs::EvalErr,
     lexer::token::TOKEN,
@@ -37,6 +38,15 @@ pub fn eval(node: &dyn Node) -> Result<Object, EvalErr> {
                 eval(expr.left.as_ref())?,
                 eval(expr.right.as_ref())?,
             );
+        }
+        NodeType::ReturnStatement => {
+            let expr = node.as_any().downcast_ref::<ReturnStatement>().unwrap();
+            if expr.expression.is_none() {
+                return Ok(Object::Null);
+            }
+            return Ok(Object::Return(Box::new(eval(
+                expr.expression.as_deref().unwrap(),
+            )?)));
         }
         NodeType::IfExpression => {
             let expr = node.as_any().downcast_ref::<IfExpression>().unwrap();
@@ -78,6 +88,9 @@ fn eval_statements(statements: &Vec<Box<dyn Statement>>) -> Result<Object, EvalE
         .collect::<Vec<&dyn Node>>();
     for &stmt in vec.iter() {
         result = eval(stmt)?;
+        if result.is_return() {
+            return Ok(result);
+        }
     }
 
     return Ok(result);
@@ -96,14 +109,17 @@ fn eval_prefix_expression(operator: TOKEN, right: Object) -> Result<Object, Eval
         ))),
     }
 }
+fn is_truthy(value: Object) -> bool {
+    match value {
+        Object::Boolean(b) => b,
+        Object::Null => false,
+        Object::Number(n) => n != 0,
+        _ => true,
+    }
+}
 
 fn eval_bang_expression(value: Object) -> Object {
-    match value {
-        Object::Boolean(b) => Object::Boolean(!b),
-        Object::Null => Object::Boolean(true),
-        Object::Number(n) => Object::Boolean(n == 0),
-        _ => Object::Boolean(false),
-    }
+    Object::Boolean(!is_truthy(value))
 }
 fn eval_eq_expression(operator: TOKEN, left: Object, right: Object) -> Result<Object, EvalErr> {
     match left {
@@ -122,13 +138,25 @@ fn eval_eq_expression(operator: TOKEN, left: Object, right: Object) -> Result<Ob
 
 fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result<Object, EvalErr> {
     match operator {
-        TOKEN::PLUS => Ok(Object::Number(left.as_int()? + right.as_int()?)),
-        TOKEN::MINUS => Ok(Object::Number(left.as_int()? - right.as_int()?)),
-        TOKEN::ASTERISK => Ok(Object::Number(left.as_int()? * right.as_int()?)),
-        TOKEN::SLASH if right.as_int()? == 0 => Err(EvalErr::DivideByZero),
-        TOKEN::SLASH => Ok(Object::Number(left.as_int()? / right.as_int()?)),
-        TOKEN::GT => Ok(Object::Boolean(left.as_int()? > right.as_int()?)),
-        TOKEN::LT => Ok(Object::Boolean(left.as_int()? < right.as_int()?)),
+        TOKEN::PLUS => Ok(Object::Number(
+            left.as_int_with(TOKEN::PLUS)? + right.as_int_with(TOKEN::PLUS)?,
+        )),
+        TOKEN::MINUS => Ok(Object::Number(
+            left.as_int_with(TOKEN::MINUS)? - right.as_int_with(TOKEN::MINUS)?,
+        )),
+        TOKEN::ASTERISK => Ok(Object::Number(
+            left.as_int_with(TOKEN::ASTERISK)? * right.as_int_with(TOKEN::ASTERISK)?,
+        )),
+        TOKEN::SLASH if right.as_int_with(TOKEN::SLASH)? == 0 => Err(EvalErr::DivideByZero),
+        TOKEN::SLASH => Ok(Object::Number(
+            left.as_int_with(TOKEN::SLASH)? / right.as_int_with(TOKEN::SLASH)?,
+        )),
+        TOKEN::GT => Ok(Object::Boolean(
+            left.as_int_with(TOKEN::GT)? > right.as_int_with(TOKEN::GT)?,
+        )),
+        TOKEN::LT => Ok(Object::Boolean(
+            left.as_int_with(TOKEN::LT)? < right.as_int_with(TOKEN::LT)?,
+        )),
         TOKEN::EQ => eval_eq_expression(operator, left, right),
         TOKEN::NotEQ => eval_eq_expression(operator, left, right),
         _ => Err(EvalErr::NotImplemented(format!(
@@ -140,7 +168,7 @@ fn eval_infix_expression(operator: TOKEN, left: Object, right: Object) -> Result
 
 fn eval_if_expression(expression: &IfExpression) -> Result<Object, EvalErr> {
     let condition = eval(expression.condition.as_ref())?;
-    if condition.as_bool()? {
+    if is_truthy(condition) {
         return eval_statements(&expression.consequence.statements);
     }
     if let Some(alternative) = &expression.alternative {
