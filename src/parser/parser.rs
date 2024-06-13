@@ -10,8 +10,8 @@ use crate::{
 
 use std::collections::HashMap;
 
-type PrefixParseFn = fn(&mut Parser) -> Result<Box<dyn Expression>, ParseErr>;
-type InfixParseFn = fn(&mut Parser, Box<dyn Expression>) -> Result<Box<dyn Expression>, ParseErr>;
+type PrefixParseFn = fn(&mut Parser) -> Result<Expression, ParseErr>;
+type InfixParseFn = fn(&mut Parser, Expression) -> Result<Expression, ParseErr>;
 pub enum Precedence {
     LOWEST,
     EQUALS,
@@ -65,7 +65,7 @@ impl Parser {
         };
         // PREFIX PARSERS
         p.register_prefix(TOKEN::IDENT("".into()), Parser::parse_identifier);
-        p.register_prefix(TOKEN::INT(0), Parser::parse_int_literal);
+        p.register_prefix(TOKEN::NUMBER(0), Parser::parse_int_literal);
         p.register_prefix(TOKEN::TRUE, Parser::parse_boolean_literal);
         p.register_prefix(TOKEN::FALSE, Parser::parse_boolean_literal);
         p.register_prefix(TOKEN::BANG, Parser::parse_prefix_expression);
@@ -113,18 +113,18 @@ impl Parser {
         return Ok(program);
     }
 
-    pub fn parse_statement(&mut self) -> Result<Box<dyn Statement>, ParseErr> {
+    pub fn parse_statement(&mut self) -> Result<Statement, ParseErr> {
         match self.cur_token {
-            TOKEN::LET => Ok(Box::new(self.parse_let_statement()?)),
-            TOKEN::RETURN => Ok(Box::new(self.parse_return_statement()?)),
-            _ => Ok(Box::new(self.parse_expression_statement()?)),
+            TOKEN::LET => Ok(self.parse_let_statement()?),
+            TOKEN::RETURN => Ok(self.parse_return_statement()?),
+            _ => Ok(self.parse_expression_statement()?),
         }
     }
 
     fn result_to_option(
         &self,
-        result: Result<Box<dyn Expression>, ParseErr>,
-    ) -> Result<Option<Box<dyn Expression>>, ParseErr> {
+        result: Result<Expression, ParseErr>,
+    ) -> Result<Option<Expression>, ParseErr> {
         match result {
             Ok(ok_exp) => Ok(Some(ok_exp)),
             Err(ParseErr::None) => Ok(None),
@@ -134,7 +134,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_let_statement(&mut self) -> Result<LetStatement, ParseErr> {
+    pub fn parse_let_statement(&mut self) -> Result<Statement, ParseErr> {
         if !self.peek_token.is_same_with(TOKEN::IDENT(String::new())) {
             return Err(ParseErr::LET("IDENT".into(), self.peek_token.clone()));
         }
@@ -152,21 +152,24 @@ impl Parser {
             self.next_token();
         }
 
-        let stmt = LetStatement::new(TOKEN::LET, name, value);
+        let stmt = LetStatement::new(name, value);
 
-        return Ok(stmt);
+        return Ok(Statement::Let(stmt));
     }
 
-    pub fn parse_return_statement(&mut self) -> Result<ReturnStatement, ParseErr> {
+    pub fn parse_return_statement(&mut self) -> Result<Statement, ParseErr> {
         let mut stmt = ReturnStatement::new();
 
         self.next_token();
         let expression = self.parse_expression(Precedence::LOWEST);
         stmt.expression = self.result_to_option(expression)?;
-        return Ok(stmt);
+        if self.peek_token.is_same_with(TOKEN::SEMICOLON) {
+            self.next_token();
+        }
+        return Ok(Statement::Return(stmt));
     }
 
-    pub fn parse_expression_statement(&mut self) -> Result<ExpressionStatement, ParseErr> {
+    pub fn parse_expression_statement(&mut self) -> Result<Statement, ParseErr> {
         let mut stmt = ExpressionStatement::new(self.cur_token.clone());
         let expression = self.parse_expression(Precedence::LOWEST);
         stmt.expression = self.result_to_option(expression)?;
@@ -175,13 +178,10 @@ impl Parser {
             self.next_token();
         }
 
-        return Ok(stmt);
+        return Ok(Statement::Expression(stmt));
     }
 
-    fn parse_expression(
-        &mut self,
-        precedence: Precedence,
-    ) -> Result<Box<dyn Expression>, ParseErr> {
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseErr> {
         let prefix = self.prefix_parse_fns.get(&self.cur_token.to_type_name());
         if prefix.is_none() {
             return Err(ParseErr::None);
@@ -216,34 +216,35 @@ impl Parser {
     }
 
     // ----------------- START EXPRESSION PARSERS ----------------------------
-    fn parse_identifier(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
-        Ok(Box::new(self.cur_token.literal()))
+    fn parse_identifier(&mut self) -> Result<Expression, ParseErr> {
+        Ok(Expression::Identifier(self.cur_token.literal()))
     }
-    fn parse_int_literal(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
-        Ok(Box::new(self.cur_token.literal().parse::<i64>().unwrap()))
+    fn parse_int_literal(&mut self) -> Result<Expression, ParseErr> {
+        Ok(Expression::Number(
+            self.cur_token.literal().parse::<i64>().unwrap(),
+        ))
     }
-    fn parse_boolean_literal(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
-        Ok(Box::new(self.cur_token.literal().parse::<bool>().unwrap()))
+    fn parse_boolean_literal(&mut self) -> Result<Expression, ParseErr> {
+        Ok(Expression::Bool(
+            self.cur_token.literal().parse::<bool>().unwrap(),
+        ))
     }
-    fn parse_prefix_expression(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
+    fn parse_prefix_expression(&mut self) -> Result<Expression, ParseErr> {
         let token = self.cur_token.clone();
         self.next_token();
         let right_exp = self.parse_expression(Precedence::PREFIX)?;
         let expression = PrefixExpression::new(token, right_exp);
-        Ok(Box::new(expression))
+        Ok(Expression::Prefix(Box::new(expression)))
     }
-    fn parse_infix_expression(
-        &mut self,
-        left: Box<dyn Expression>,
-    ) -> Result<Box<dyn Expression>, ParseErr> {
+    fn parse_infix_expression(&mut self, left: Expression) -> Result<Expression, ParseErr> {
         let operator = self.cur_token.clone();
         let precedence = self.cur_precedence();
         self.next_token();
         let right = self.parse_expression(precedence)?;
         let inf_exp = InfixExpression::new(left, operator, right);
-        Ok(Box::new(inf_exp))
+        Ok(Expression::Infix(Box::new(inf_exp)))
     }
-    fn parse_group_expression(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
+    fn parse_group_expression(&mut self) -> Result<Expression, ParseErr> {
         self.next_token(); // to move on from "("
         let expression = self.parse_expression(Precedence::LOWEST);
 
@@ -253,7 +254,7 @@ impl Parser {
         self.next_token(); // to move on from ")"
         return expression;
     }
-    fn parse_if_expression(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
+    fn parse_if_expression(&mut self) -> Result<Expression, ParseErr> {
         self.next_token();
         let condition = self.parse_expression(Precedence::LOWEST)?;
         let mut expression = IfExpression::new(condition);
@@ -278,11 +279,11 @@ impl Parser {
             }
         }
 
-        return Ok(Box::new(expression));
+        return Ok(Expression::If(Box::new(expression)));
     }
     // ----------------- END EXPRESSION PARSERS ----------------------------
     //When calling this, current token must be "{" or LBRACE
-    pub fn parse_block_statement(&mut self) -> Result<Vec<Box<dyn Statement>>, ParseErr> {
+    pub fn parse_block_statement(&mut self) -> Result<Vec<Statement>, ParseErr> {
         if self.cur_token.is_same_with(TOKEN::RBRACE) {
             return Err(ParseErr::BLOCK("RBRACE".into(), self.cur_token.clone()));
         }
@@ -301,11 +302,11 @@ impl Parser {
 
         return Ok(block_stmts);
     }
-    pub fn parse_function_literal(&mut self) -> Result<Box<dyn Expression>, ParseErr> {
+    pub fn parse_function_literal(&mut self) -> Result<Expression, ParseErr> {
         self.next_token();
         let mut function = FunctionLiteral::new(self.parse_fn_parameters()?);
         function.body = BlockStatement::new(self.parse_block_statement()?);
-        return Ok(Box::new(function));
+        return Ok(Expression::Function(Box::new(function)));
     }
     // when calling this, current token must be "(" or LPAREN
     pub fn parse_fn_parameters(&mut self) -> Result<Vec<String>, ParseErr> {
@@ -329,16 +330,13 @@ impl Parser {
 
         return Ok(identifiers);
     }
-    pub fn parse_call_expression(
-        &mut self,
-        function: Box<dyn Expression>,
-    ) -> Result<Box<dyn Expression>, ParseErr> {
+    pub fn parse_call_expression(&mut self, function: Expression) -> Result<Expression, ParseErr> {
         let mut call = CallExpression::new(function);
         call.arguments = self.parse_call_args()?;
-        return Ok(Box::new(call));
+        return Ok(Expression::Call(Box::new(call)));
     }
     // call this when current token is "("
-    fn parse_call_args(&mut self) -> Result<Vec<Box<dyn Expression>>, ParseErr> {
+    fn parse_call_args(&mut self) -> Result<Vec<Expression>, ParseErr> {
         let mut args = vec![];
 
         while !self.peek_token.is_same_with(TOKEN::RPAREN) {

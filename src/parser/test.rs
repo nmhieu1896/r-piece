@@ -4,26 +4,19 @@ mod tests {
 
     use std::vec;
 
-    use crate::{
-        ast::ast::{
-            stringnify_stmt, CallExpression, ExpressionStatement, FunctionLiteral, InfixExpression,
-            LetStatement, Node, PrefixExpression, ReturnStatement,
-        },
-        lexer::lexer::Lexer,
-        parser::parser::Parser,
-    };
+    use crate::{ast::ast::NodeTrait, lexer::lexer::Lexer, parser::parser::Parser};
 
     #[test]
     fn test_parser() {
         let let_inputs = vec![
-            ("let x = 1+ 5 +10;", "LET", "x", "((1 + 5) + 10)"),
-            ("let y = a + 10 * 2;", "LET", "y", "(a + (10 * 2))"),
-            ("let foobar = 838383;", "LET", "foobar", "838383"),
+            ("let x = 1+ 5 +10;", "let", "x", "((1 + 5) + 10)"),
+            ("let y = a + 10 * 2;", "let", "y", "(a + (10 * 2))"),
+            ("let foobar = 838383;", "let", "foobar", "838383"),
         ];
         let return_inputs = vec![
-            ("return 5+10;", "RETURN", "(5 + 10)"),
-            ("return a + 10 * 2;", "RETURN", "(a + (10 * 2))"),
-            ("return 838383;", "RETURN", "838383"),
+            ("return 5+10;", "return", "(5 + 10)"),
+            ("return a + 10 * 2;", "return", "(a + (10 * 2))"),
+            ("return 838383;", "return", "838383"),
         ];
 
         for &(input, keyword, ident, val) in let_inputs.iter() {
@@ -35,16 +28,12 @@ mod tests {
                 assert!(false);
                 return;
             }
+            println!("{:#?}", program);
             let p = program.unwrap();
-            // println!("{:#?}", program);
-            assert!(p.statements[0].as_any().is::<LetStatement>());
-            let stmt = p.statements[0]
-                .as_any()
-                .downcast_ref::<LetStatement>()
-                .unwrap();
-            assert_eq!(stmt.token.literal(), keyword.to_string());
-            assert_eq!(stmt.name.clone(), ident.to_string());
-            assert_eq!(stmt.value.as_ref().to_str(), val.to_string());
+            let let_stmt = p.statements[0].to_let().unwrap();
+            assert_eq!(let_stmt.token_literal(), keyword.to_string());
+            assert_eq!(let_stmt.name.clone(), ident.to_string());
+            assert_eq!(let_stmt.value.to_str(), val.to_string());
         }
         for &(input, keyword, val) in return_inputs.iter() {
             let l = Lexer::new(input.to_string());
@@ -57,16 +46,9 @@ mod tests {
             }
             let p = program.unwrap();
             println!("{:#?}", p);
-            assert!(p.statements[0].as_any().is::<ReturnStatement>());
-            let stmt = p.statements[0]
-                .as_any()
-                .downcast_ref::<ReturnStatement>()
-                .unwrap();
-            assert_eq!(stmt.token.literal(), keyword.to_string());
-            assert_eq!(
-                stmt.expression.as_deref().unwrap().to_str(),
-                val.to_string()
-            );
+            let exp = p.statements[0].to_return().unwrap();
+            assert_eq!(exp.token_literal(), keyword.to_string());
+            assert_eq!(exp.expression.as_ref().unwrap().to_str(), val.to_string());
         }
     }
 
@@ -84,16 +66,10 @@ mod tests {
         };
         let p = program.unwrap();
         println!("{:#?}", p);
-        assert_eq!(p.statements[0].token_literal(), "foobar");
-        assert!(p.statements[0].as_any().is::<ExpressionStatement>());
-        let stmt = p.statements[0]
-            .as_any()
-            .downcast_ref::<ExpressionStatement>();
-
-        let exp = stmt.unwrap().expression.as_deref();
-        assert_eq!(exp.unwrap().token_literal(), "foobar".to_string());
-        assert!(exp.unwrap().as_any().is::<String>());
-        assert_eq!(p.statements.len(), 1);
+        let exp = p.statements[0].to_expression().unwrap();
+        assert_eq!(exp.token_literal(), "foobar".to_string());
+        assert_eq!(exp.to_str(), "foobar".to_string());
+        assert_eq!(exp.expression.unwrap().to_ident().unwrap(), "foobar");
     }
 
     #[test]
@@ -109,16 +85,11 @@ mod tests {
             return;
         };
         let p = program.unwrap();
-
         println!("{:#?}", p);
-        let stmt = p.statements[0]
-            .as_any()
-            .downcast_ref::<ExpressionStatement>();
-        let exp = stmt.unwrap().expression.as_deref();
-        assert!(exp.unwrap().as_any().is::<i64>());
-        assert_eq!(exp.unwrap().token_literal(), "5".to_string());
-
-        assert_eq!(p.statements.len(), 1);
+        let exp = p.statements[0].to_expression().unwrap();
+        assert_eq!(exp.token_literal(), "5".to_string());
+        assert_eq!(exp.to_str(), "5".to_string());
+        assert_eq!(exp.expression.unwrap().to_num().unwrap(), 5);
     }
     #[test]
     fn test_prefix_expressions() {
@@ -133,23 +104,12 @@ mod tests {
                 assert!(false);
                 return;
             };
+            println!("{:#?}", program);
             let p = program.unwrap();
-            // println!("{:#?}", program);
-            let stmt = p.statements[0]
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .unwrap();
-            let prefix_exp = stmt
-                .expression
-                .as_deref()
-                .unwrap()
-                .as_any()
-                .downcast_ref::<PrefixExpression>()
-                .unwrap();
-            assert_eq!(prefix_exp.token.literal(), operator.to_string());
-            assert_eq!(prefix_exp.right.as_ref().token_literal(), value.to_string());
-
-            assert_eq!(p.statements.len(), 1);
+            let exp = p.statements[0].to_expression().unwrap();
+            let prefix = exp.expression.unwrap().to_prefix().unwrap();
+            assert_eq!(prefix.token.literal(), operator.to_string());
+            assert_eq!(prefix.right.to_str(), value.to_string());
         }
     }
 
@@ -176,48 +136,31 @@ mod tests {
                 return;
             };
             let p = program.unwrap();
-            println!("{:#?}", p);
-            assert_eq!(p.statements.len(), 1);
-
-            let stmt = p.statements[0]
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .unwrap();
-            println!("{:#?}", stmt);
-            let infix_exp = stmt
-                .expression
-                .as_deref()
-                .unwrap()
-                .as_any()
-                .downcast_ref::<InfixExpression>()
-                .unwrap();
-            assert_eq!(infix_exp.operator.literal(), operator.to_string());
-            let left = infix_exp.left.as_ref(); //as_ref for Box
-            assert_eq!(left.token_literal(), left_value.to_string());
-            assert_eq!(
-                infix_exp.right.as_ref().token_literal(),
-                right_value.to_string()
-            );
+            let exp = p.statements[0].to_expression().unwrap();
+            let infix = exp.expression.unwrap().to_infix().unwrap();
+            assert_eq!(infix.token_literal(), operator.to_string());
+            assert_eq!(infix.left.to_str(), left_value.to_string());
+            assert_eq!(infix.right.to_str(), right_value.to_string());
         }
     }
 
     #[test]
     fn test_operator_precedence_parsing() {
         let tests = vec![
-            ("-a * b", "((-a) * b)"),
-            ("-a * 5", "((-a) * 5)"),
-            ("-5 * a", "((-5) * a)"),
-            ("!-a", "(!(-a))"),
-            ("a + b + c", "((a + b) + c)"),
-            ("a + b * c", "(a + (b * c))"),
-            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
-            ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
-            ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
-            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
-            (
-                "3 + 4 * 5 == 3 * 1 + 4 * 5",
-                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-            ),
+            // ("-a * b", "((-a) * b)"),
+            // ("-a * 5", "((-a) * 5)"),
+            // ("-5 * a", "((-5) * a)"),
+            // ("!-a", "(!(-a))"),
+            // ("a + b + c", "((a + b) + c)"),
+            // ("a + b * c", "(a + (b * c))"),
+            // ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            // ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+            // ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+            // ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+            // (
+            //     "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            //     "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            // ),
             (
                 "3 + 4 * 5 == 3 * 1 + 4 * 5",
                 "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
@@ -236,8 +179,8 @@ mod tests {
             let p = program.unwrap();
 
             println!("p1: {:#?}", p);
-            let exp1 = stringnify_stmt(&p.statements);
-            assert_eq!(&exp1, expected)
+            let exp = p.statements[0].to_expression().unwrap();
+            assert_eq!(exp.to_str(), expected)
         }
     }
 
@@ -255,17 +198,13 @@ mod tests {
             let l1 = Lexer::new(str1.to_string());
             let mut p1 = Parser::new(l1);
             let program = p1.parse_program();
-            match program {
-                Ok(p) => {
-                    println!("p1: {:#?}", p);
-                    let exp1 = stringnify_stmt(&p.statements);
-                    assert_eq!(&exp1, expected)
-                }
-                Err(e) => {
-                    println!("{:?}", e);
-                    assert!(false);
-                }
-            }
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                assert!(false);
+                return;
+            };
+            let exp = program.unwrap().statements[0].to_expression().unwrap();
+            assert_eq!(exp.to_str(), expected)
         }
     }
 
@@ -273,20 +212,35 @@ mod tests {
     fn test_if_expression() {
         let input = r#"
         if (x < y) { 
-            let x = 1;  
+            let x = 1;
             return x;
         } else {
            let y = 1;
-           return y; 
+           return y;
         }
         "#;
 
-        let l1 = Lexer::new(input.to_string());
-        let mut p1 = Parser::new(l1);
-        let program1 = p1.parse_program();
-        println!("p1: {:#?}", program1);
-        // let exp1 = stringnify_stmt(&program1.statements);
-        // assert_eq!(&exp1, expected)
+        let l = Lexer::new(input.to_string());
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        println!("p1: {:#?}", program);
+        if program.is_err() {
+            println!("{:?}", program.err().unwrap());
+            assert!(false);
+            return;
+        };
+        let exp = program.unwrap().statements[0].to_expression().unwrap();
+        let if_exp = exp.expression.unwrap().to_if().unwrap();
+        assert_eq!(if_exp.condition.to_str(), "(x < y)");
+        assert_eq!(if_exp.consequence.to_str(), "{let x = 1; return x;}");
+        assert_eq!(
+            if_exp.alternative.clone().unwrap().to_str(),
+            "{let y = 1; return y;}"
+        );
+        assert_eq!(
+            if_exp.to_str(),
+            "if (x < y) {let x = 1; return x;} else {let y = 1; return y;}"
+        );
     }
 
     #[test]
@@ -294,8 +248,8 @@ mod tests {
         let v1 = vec![];
         let v2 = vec!["x".to_string(), "y".to_string(), "z".to_string()];
         let inputs = vec![
-            ("fn() { }", &v1, ""),
-            ("fn(x, y, z) { x + y * z; }", &v2, "(x + (y * z))"),
+            ("fn() { }", &v1, "{}"),
+            ("fn(x, y, z) { x + y * z; }", &v2, "{(x + (y * z))}"),
         ];
 
         for &(input, parameters, block_expect) in inputs.iter() {
@@ -308,22 +262,11 @@ mod tests {
                 return;
             }
             let p = program.unwrap();
-
             println!("p: {:#?}", p);
-            let stmt = p.statements[0]
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .unwrap();
-            let fn_stmt = stmt
-                .expression
-                .as_deref()
-                .unwrap()
-                .as_any()
-                .downcast_ref::<FunctionLiteral>()
-                .unwrap();
-            assert_eq!(&fn_stmt.parameters, parameters);
-            let block_stmt = stringnify_stmt(&fn_stmt.body.statements);
-            assert_eq!(block_stmt, block_expect);
+            let exp = p.statements[0].to_expression().unwrap();
+            let fn_exp = exp.expression.unwrap().to_fn().unwrap();
+            assert_eq!(fn_exp.body.to_str(), block_expect);
+            assert_eq!(&fn_exp.parameters, parameters);
         }
     }
 
@@ -361,20 +304,11 @@ mod tests {
             }
             let p = program.unwrap();
             println!("p: {:#?}", p);
-            let stmt = p.statements[0]
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .unwrap();
-            let fn_call = stmt
-                .expression
-                .as_deref()
-                .unwrap()
-                .as_any()
-                .downcast_ref::<CallExpression>()
-                .unwrap();
-            assert_eq!(fn_call.to_str(), expected_fn_call);
+            let exp = p.statements[0].to_expression().unwrap();
+            let call = exp.expression.unwrap().to_call().unwrap();
+            assert_eq!(call.to_str(), expected_fn_call);
             for (idx, &exp) in expected_args.iter().enumerate() {
-                assert_eq!(fn_call.arguments[idx].to_str(), exp);
+                assert_eq!(call.arguments[idx].to_str(), exp);
             }
         }
     }

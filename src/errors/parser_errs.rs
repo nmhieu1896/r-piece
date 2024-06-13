@@ -32,6 +32,33 @@ pub enum ParseErr {
     BLOCK(String, TOKEN),
     #[error("None")]
     None,
+
+    // Parse Expression
+    #[error("To Ident Error: \nExpected: {0} | got {1:?}")]
+    ToIdent(String, String),
+    #[error("To Number Error: \nExpected: {0} | got {1:?}")]
+    ToNum(String, String),
+    #[error("To Bool Error: \nExpected: {0} | got {1:?}")]
+    ToBool(String, String),
+    #[error("To Prefix Error: \nExpected: {0} | got {1:?}")]
+    ToPrefix(String, String),
+    #[error("To Infix Error: \nExpected: {0} | got {1:?}")]
+    ToInfix(String, String),
+    #[error("To Call Error: \nExpected: {0} | got {1:?}")]
+    ToCall(String, String),
+    #[error("To If Error: \nExpected: {0} | got {1:?}")]
+    ToIf(String, String),
+    #[error("To Function Error: \nExpected: {0} | got {1:?}")]
+    ToFn(String, String),
+    // Parse Statement
+    #[error("To Let Error: \nExpected: {0} | got {1:?}")]
+    ToLet(String, String),
+    #[error("To Return Error: \nExpected: {0} | got {1:?}")]
+    ToReturn(String, String),
+    #[error("To Expression Error: \nExpected: {0} | got {1:?}")]
+    ToExpression(String, String),
+    // #[error("To Block Error: \nExpected: {0} | got {1:?}")]
+    // ToBlock(String, String),
 }
 
 impl ParseErr {

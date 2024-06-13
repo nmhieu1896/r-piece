@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::mem::discriminant;
 
-use crate::ast::ast::{Identifier, Integer};
+use crate::ast::ast::{Identifier, Number};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TOKEN {
@@ -11,7 +11,7 @@ pub enum TOKEN {
 
     // Identifiers + literals
     IDENT(Identifier),
-    INT(Integer),
+    NUMBER(Number),
 
     // Operators
     ASSIGN,
@@ -71,7 +71,7 @@ impl TOKEN {
             //
             TOKEN::ILLEGAL(c) => String::from(*c),
             TOKEN::IDENT(s) => s.clone(),
-            TOKEN::INT(n) => n.to_string(),
+            TOKEN::NUMBER(n) => n.to_string(),
             _ => String::from("not_defined_yet"),
         }
     }
@@ -103,7 +103,7 @@ impl TOKEN {
             TOKEN::FUNCTION => String::from("fn"),
             //
             TOKEN::IDENT(_) => String::from("IDENT"),
-            TOKEN::INT(_) => String::from("INT"),
+            TOKEN::NUMBER(_) => String::from("NUMBER"),
             TOKEN::ILLEGAL(_) => String::from("ILLEGAL"),
         }
     }

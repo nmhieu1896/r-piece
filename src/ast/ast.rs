@@ -1,8 +1,8 @@
-use std::{fmt::Debug, marker::Unsize};
+use std::fmt::Debug;
 
-use crate::lexer::token::TOKEN;
+use crate::{errors::parser_errs::ParseErr, lexer::token::TOKEN};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum NodeType {
     Program,
     LetStatement,
@@ -16,48 +16,236 @@ pub enum NodeType {
     CallExpression,
     //
     Identifier,
-    Int,
+    Number,
     Bool,
 }
 
-pub trait Node: Debug {
+pub trait NodeTrait: Debug {
     #[allow(unused)]
-    fn as_any(&self) -> &dyn std::any::Any;
     fn token_literal(&self) -> String;
     fn to_str(&self) -> String;
     fn node_type(&self) -> NodeType;
 }
-pub fn upcast_trait<Dyn: ?Sized + Unsize<dyn Node>>(bar: &Dyn) -> &dyn Node {
-    bar
+
+#[allow(unused)]
+#[derive(Debug, Clone)]
+pub enum Node {
+    Expression(Expression),
+    Statement(Statement),
 }
-pub trait Statement: Node {
-    // #[allow(unused)]
-    // fn as_any(&self) -> &dyn std::any::Any;
-    #[allow(unused)]
-    fn statement_node(&self);
+impl NodeTrait for Node {
+    fn node_type(&self) -> NodeType {
+        match self {
+            Node::Expression(x) => x.node_type(),
+            Node::Statement(x) => x.node_type(),
+        }
+    }
+    fn token_literal(&self) -> String {
+        match self {
+            Node::Expression(x) => x.token_literal(),
+            Node::Statement(x) => x.token_literal(),
+        }
+    }
+    fn to_str(&self) -> String {
+        match self {
+            Node::Expression(x) => x.to_str(),
+            Node::Statement(x) => x.to_str(),
+        }
+    }
 }
 
-pub trait Expression: Node {
-    // #[allow(unused)]
-    // fn as_any(&self) -> &dyn std::any::Any;
-    #[allow(unused)]
-    fn expression_node(&self);
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Identifier(Identifier),
+    Number(Number),
+    Bool(bool),
+    Prefix(Box<PrefixExpression>),
+    Infix(Box<InfixExpression>),
+    If(Box<IfExpression>),
+    Call(Box<CallExpression>),
+    Function(Box<FunctionLiteral>),
+}
+impl Expression {
+    pub fn to_ident(&self) -> Result<Identifier, ParseErr> {
+        match self {
+            Expression::Identifier(x) => Ok(x.clone()),
+            anything => Err(ParseErr::ToIdent(
+                "Indentifier".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_num(&self) -> Result<Number, ParseErr> {
+        match self {
+            Expression::Number(x) => Ok(x.clone()),
+            anything => Err(ParseErr::ToNum(
+                "Number".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_bool(&self) -> Result<bool, ParseErr> {
+        match self {
+            Expression::Bool(x) => Ok(x.clone()),
+            anything => Err(ParseErr::ToBool(
+                "Bool".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_prefix(&self) -> Result<PrefixExpression, ParseErr> {
+        match self {
+            Expression::Prefix(x) => Ok(x.as_ref().clone()),
+            anything => Err(ParseErr::ToPrefix(
+                "Prefix".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_infix(&self) -> Result<InfixExpression, ParseErr> {
+        match self {
+            Expression::Infix(x) => Ok(x.as_ref().clone()),
+            anything => Err(ParseErr::ToInfix(
+                "Infix".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_call(&self) -> Result<CallExpression, ParseErr> {
+        match self {
+            Expression::Call(x) => Ok(x.as_ref().clone()),
+            anything => Err(ParseErr::ToCall(
+                "Call Expression".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_if(&self) -> Result<IfExpression, ParseErr> {
+        match self {
+            Expression::If(x) => Ok(x.as_ref().clone()),
+            anything => Err(ParseErr::ToIf(
+                "If Expression".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+    pub fn to_fn(&self) -> Result<FunctionLiteral, ParseErr> {
+        match self {
+            Expression::Function(x) => Ok(x.as_ref().clone()),
+            anything => Err(ParseErr::ToFn(
+                "Function Literal".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
+}
+impl NodeTrait for Expression {
+    fn node_type(&self) -> NodeType {
+        match self {
+            Expression::Identifier(_) => NodeType::Identifier,
+            Expression::Number(_) => NodeType::Number,
+            Expression::Bool(_) => NodeType::Bool,
+            Expression::Prefix(_) => NodeType::PrefixExpression,
+            Expression::Infix(_) => NodeType::InfixExpression,
+            Expression::If(_) => NodeType::IfExpression,
+            Expression::Call(_) => NodeType::CallExpression,
+            Expression::Function(_) => NodeType::FunctionLiteral,
+        }
+    }
+    fn token_literal(&self) -> String {
+        match self {
+            Expression::Identifier(x) => x.token_literal(),
+            Expression::Number(x) => x.token_literal(),
+            Expression::Bool(x) => x.token_literal(),
+            Expression::Prefix(x) => x.token_literal(),
+            Expression::Infix(x) => x.token_literal(),
+            Expression::If(x) => x.token_literal(),
+            Expression::Call(x) => x.token_literal(),
+            Expression::Function(x) => x.token_literal(),
+        }
+    }
+    fn to_str(&self) -> String {
+        match self {
+            Expression::Identifier(x) => x.to_str(),
+            Expression::Number(x) => x.to_str(),
+            Expression::Bool(x) => x.to_str(),
+            Expression::Prefix(x) => x.to_str(),
+            Expression::Infix(x) => x.to_str(),
+            Expression::If(x) => x.to_str(),
+            Expression::Call(x) => x.to_str(),
+            Expression::Function(x) => x.to_str(),
+        }
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub enum Statement {
+    Let(LetStatement),
+    Return(ReturnStatement),
+    Expression(ExpressionStatement),
+    // Block(BlockStatement),
+}
+impl Statement {
+    pub fn to_let(&self) -> Result<LetStatement, ParseErr> {
+        match self {
+            Statement::Let(x) => Ok(x.clone()),
+            x => Err(ParseErr::ToLet("".to_string(), x.token_literal())),
+        }
+    }
+    pub fn to_return(&self) -> Result<ReturnStatement, ParseErr> {
+        match self {
+            Statement::Return(x) => Ok(x.clone()),
+            x => Err(ParseErr::ToReturn("".to_string(), x.token_literal())),
+        }
+    }
+    pub fn to_expression(&self) -> Result<ExpressionStatement, ParseErr> {
+        match self {
+            Statement::Expression(x) => Ok(x.clone()),
+            x => Err(ParseErr::ToExpression("".to_string(), x.token_literal())),
+        }
+    }
+    // pub fn to_block(&self) -> Result<BlockStatement, ParseErr> {
+    //     match self {
+    //         Statement::Block(x) => Ok(x.clone()),
+    //         x => Err(ParseErr::ToBlock("".to_string(), x.token_literal())),
+    //     }
+    // }
+}
+impl NodeTrait for Statement {
+    fn node_type(&self) -> NodeType {
+        match self {
+            Statement::Let(_) => NodeType::LetStatement,
+            Statement::Return(_) => NodeType::ReturnStatement,
+            Statement::Expression(_) => NodeType::ExpressionStatement,
+            // Statement::Block(_) => NodeType::BlockStatement,
+        }
+    }
+    fn token_literal(&self) -> String {
+        match self {
+            Statement::Let(x) => x.token_literal(),
+            Statement::Return(x) => x.token_literal(),
+            Statement::Expression(x) => x.token_literal(),
+            // Statement::Block(x) => x.token_literal(),
+        }
+    }
+    fn to_str(&self) -> String {
+        match self {
+            Statement::Let(x) => x.to_str(),
+            Statement::Return(x) => x.to_str(),
+            Statement::Expression(x) => x.to_str(),
+            // Statement::Block(x) => x.to_str(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Program {
-    // dyn keyword is for dynamic dispatch
-    // this keyword is requried because "Statement" is a trait
-    // and there's no hint about the size of "statements-impl-struct"
-    pub statements: Vec<Box<dyn Statement>>,
+    pub statements: Vec<Statement>,
 }
 
-impl Node for Program {
+impl NodeTrait for Program {
     fn node_type(&self) -> NodeType {
         NodeType::Program
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
     fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
@@ -71,84 +259,68 @@ impl Node for Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LetStatement {
-    pub token: TOKEN,
     pub name: Identifier, // if name is IDENT(string) => Some(String) else None
-    pub value: Box<dyn Expression>,
+    pub value: Expression,
 }
 impl LetStatement {
-    pub fn new(token: TOKEN, name: Identifier, value: Box<dyn Expression>) -> Self {
-        Self { token, name, value }
+    pub fn new(name: Identifier, value: Expression) -> Self {
+        Self { name, value }
     }
 }
 
-impl Statement for LetStatement {
-    fn statement_node(&self) {}
-}
-impl Node for LetStatement {
+impl NodeTrait for LetStatement {
     fn node_type(&self) -> NodeType {
         NodeType::LetStatement
     }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn token_literal(&self) -> String {
-        self.token.literal()
+        return "let".to_string();
     }
     fn to_str(&self) -> String {
-        let mut str = String::from("");
-        str.push_str(&self.token.literal());
-        str.push_str(" ");
+        let mut str = String::from("let ");
         str.push_str(&self.name.clone());
         str.push_str(" = ");
-        str.push_str(&self.value.as_ref().to_str());
+        str.push_str(&self.value.to_str());
+        str.push_str(";");
 
         return str;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ReturnStatement {
-    pub token: TOKEN,
-    pub expression: Option<Box<dyn Expression>>,
+    pub expression: Option<Expression>,
 }
 impl ReturnStatement {
     pub fn new() -> Self {
-        Self {
-            token: TOKEN::RETURN,
-            expression: None,
-        }
+        Self { expression: None }
     }
 }
-impl Statement for ReturnStatement {
-    fn statement_node(&self) {}
-}
-impl Node for ReturnStatement {
+
+impl NodeTrait for ReturnStatement {
     fn node_type(&self) -> NodeType {
         NodeType::ReturnStatement
     }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn token_literal(&self) -> String {
-        self.token.literal()
+        "return".to_string()
     }
     fn to_str(&self) -> String {
         let mut str = String::from("");
-        str.push_str(&self.token.literal());
+        str.push_str(&self.token_literal());
         str.push_str(" ");
         if self.expression.is_some() {
-            str.push_str(&self.expression.as_deref().unwrap().to_str());
+            str.push_str(&self.expression.as_ref().unwrap().to_str());
         }
+        str.push_str(";");
         return str;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExpressionStatement {
     pub token: TOKEN,
-    pub expression: Option<Box<dyn Expression>>,
+    pub expression: Option<Expression>,
 }
 impl ExpressionStatement {
     pub fn new(token: TOKEN) -> Self {
@@ -158,16 +330,14 @@ impl ExpressionStatement {
         }
     }
 }
-impl Statement for ExpressionStatement {
-    fn statement_node(&self) {}
-}
-impl Node for ExpressionStatement {
+
+impl NodeTrait for ExpressionStatement {
     fn node_type(&self) -> NodeType {
         NodeType::ExpressionStatement
     }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
+    // fn as_any(&self) -> &dyn std::any::Any {
+    //     self
+    // }
     fn token_literal(&self) -> String {
         self.token.literal()
     }
@@ -176,35 +346,41 @@ impl Node for ExpressionStatement {
         if self.expression.is_none() {
             str.push_str(&self.token.literal());
         } else {
-            str.push_str(&self.expression.as_deref().unwrap().to_str());
+            str.push_str(&self.expression.as_ref().unwrap().to_str());
         }
         return str;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockStatement {
-    pub statements: Vec<Box<dyn Statement>>,
+    pub statements: Vec<Statement>,
 }
 impl BlockStatement {
-    pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
+    pub fn new(statements: Vec<Statement>) -> Self {
         Self { statements }
     }
 }
-impl Node for BlockStatement {
+impl NodeTrait for BlockStatement {
     fn node_type(&self) -> NodeType {
         NodeType::BlockStatement
     }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
     fn token_literal(&self) -> String {
-        "{}".to_string()
+        "BLOCK".to_string()
     }
     fn to_str(&self) -> String {
-        let mut str = String::from("if ");
-        str.push_str(" {");
-        str.push_str(&stringnify_stmt(&self.statements));
+        let mut str = String::from("");
+        str.push_str("{");
+
+        str.push_str(
+            &self
+                .statements
+                .iter()
+                .map(|x| x.to_str())
+                .collect::<Vec<String>>()
+                .join(" "),
+        );
+        // str.push_str(&stringnify_stmt(&self.statements));
         str.push_str("}");
 
         return str;
@@ -214,15 +390,9 @@ impl Node for BlockStatement {
 // -------------- EXPRESSION TYPE ----------------------
 //PRIMITIVE String
 pub type Identifier = String;
-impl Expression for Identifier {
-    fn expression_node(&self) {}
-}
-impl Node for Identifier {
+impl NodeTrait for Identifier {
     fn node_type(&self) -> NodeType {
         NodeType::Identifier
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
     fn to_str(&self) -> String {
         self.clone()
@@ -232,16 +402,10 @@ impl Node for Identifier {
     }
 }
 //PRIMITIVE number
-pub type Integer = i64;
-impl Expression for Integer {
-    fn expression_node(&self) {}
-}
-impl Node for Integer {
+pub type Number = i64;
+impl NodeTrait for Number {
     fn node_type(&self) -> NodeType {
-        NodeType::Int
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
+        NodeType::Number
     }
     fn to_str(&self) -> String {
         self.to_string()
@@ -252,15 +416,10 @@ impl Node for Integer {
 }
 //PRIMITIVE Boolean
 pub type Boolean = bool;
-impl Expression for Boolean {
-    fn expression_node(&self) {}
-}
-impl Node for Boolean {
+
+impl NodeTrait for Boolean {
     fn node_type(&self) -> NodeType {
         NodeType::Bool
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
     fn to_str(&self) -> String {
         self.to_string()
@@ -270,7 +429,7 @@ impl Node for Boolean {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionLiteral {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
@@ -283,15 +442,10 @@ impl FunctionLiteral {
         }
     }
 }
-impl Expression for FunctionLiteral {
-    fn expression_node(&self) {}
-}
-impl Node for FunctionLiteral {
+
+impl NodeTrait for FunctionLiteral {
     fn node_type(&self) -> NodeType {
         NodeType::FunctionLiteral
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
     fn to_str(&self) -> String {
         let mut str = String::from("fn(");
@@ -313,30 +467,28 @@ impl Node for FunctionLiteral {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PrefixExpression {
     pub token: TOKEN,
-    pub right: Box<dyn Expression>,
+    pub right: Expression,
 }
 impl PrefixExpression {
-    pub fn new(token: TOKEN, right: Box<dyn Expression>) -> Self {
+    pub fn new(token: TOKEN, right: Expression) -> Self {
         Self { token, right }
     }
 }
-impl Expression for PrefixExpression {
-    fn expression_node(&self) {}
-}
-impl Node for PrefixExpression {
+
+impl NodeTrait for PrefixExpression {
     fn node_type(&self) -> NodeType {
         NodeType::PrefixExpression
     }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
+    // fn as_any(&self) -> &dyn std::any::Any {
+    //     self
+    // }
     fn to_str(&self) -> String {
         let mut str = String::from("(");
         str.push_str(&self.token.literal());
-        str.push_str(&self.right.as_ref().to_str());
+        str.push_str(&self.right.to_str());
         str.push(')');
         return str;
     }
@@ -345,14 +497,14 @@ impl Node for PrefixExpression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InfixExpression {
     pub operator: TOKEN,
-    pub left: Box<dyn Expression>,
-    pub right: Box<dyn Expression>,
+    pub left: Expression,
+    pub right: Expression,
 }
 impl InfixExpression {
-    pub fn new(left: Box<dyn Expression>, operator: TOKEN, right: Box<dyn Expression>) -> Self {
+    pub fn new(left: Expression, operator: TOKEN, right: Expression) -> Self {
         Self {
             left: left,
             operator,
@@ -360,39 +512,35 @@ impl InfixExpression {
         }
     }
 }
-impl Expression for InfixExpression {
-    fn expression_node(&self) {}
-}
-impl Node for InfixExpression {
+
+impl NodeTrait for InfixExpression {
     fn node_type(&self) -> NodeType {
         NodeType::InfixExpression
     }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
+
     fn token_literal(&self) -> String {
         self.operator.literal()
     }
     fn to_str(&self) -> String {
         let mut str = String::from("(");
-        str.push_str(&self.left.as_ref().to_str());
+        str.push_str(&self.left.to_str());
         str.push_str(" ");
         str.push_str(&self.operator.literal());
         str.push_str(" ");
-        str.push_str(&self.right.as_ref().to_str());
+        str.push_str(&self.right.to_str());
         str.push(')');
         return str;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IfExpression {
-    pub condition: Box<dyn Expression>,
+    pub condition: Expression,
     pub consequence: BlockStatement,
     pub alternative: Option<BlockStatement>,
 }
 impl IfExpression {
-    pub fn new(condition: Box<dyn Expression>) -> Self {
+    pub fn new(condition: Expression) -> Self {
         IfExpression {
             condition,
             consequence: BlockStatement { statements: vec![] },
@@ -400,15 +548,10 @@ impl IfExpression {
         }
     }
 }
-impl Expression for IfExpression {
-    fn expression_node(&self) {}
-}
-impl Node for IfExpression {
+
+impl NodeTrait for IfExpression {
     fn node_type(&self) -> NodeType {
         NodeType::IfExpression
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
     fn token_literal(&self) -> String {
         "IF".to_string()
@@ -416,37 +559,33 @@ impl Node for IfExpression {
     fn to_str(&self) -> String {
         let mut str = String::from("if ");
         str.push_str(&self.condition.to_str());
+        str.push_str(" ");
         str.push_str(&self.consequence.to_str());
-
         if self.alternative.is_some() {
+            str.push_str(" else ");
             str.push_str(&self.alternative.as_ref().unwrap().to_str());
         }
         return str;
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallExpression {
-    pub function: Box<dyn Expression>, // Identifier or FunctionLiteral
-    pub arguments: Vec<Box<dyn Expression>>,
+    pub function: Expression, // Identifier or FunctionLiteral
+    pub arguments: Vec<Expression>,
 }
 impl CallExpression {
-    pub fn new(function: Box<dyn Expression>) -> Self {
+    pub fn new(function: Expression) -> Self {
         Self {
             function,
             arguments: vec![],
         }
     }
 }
-impl Expression for CallExpression {
-    fn expression_node(&self) {}
-}
-impl Node for CallExpression {
+
+impl NodeTrait for CallExpression {
     fn node_type(&self) -> NodeType {
         NodeType::CallExpression
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
     fn token_literal(&self) -> String {
         "CALL".to_string()
@@ -469,7 +608,7 @@ impl Node for CallExpression {
 }
 // -------------- EXPRESSION TYPE ----------------------
 
-pub fn stringnify_stmt(stmts: &Vec<Box<dyn Statement>>) -> String {
+pub fn stringnify_stmt(stmts: &Vec<Statement>) -> String {
     let mut str = String::new();
     for stmt in stmts.iter() {
         str.push_str(&stmt.to_str())
