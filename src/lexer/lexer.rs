@@ -1,4 +1,6 @@
-use super::token::{KEYWORDS, TOKEN};
+use std::collections::HashMap;
+
+use super::token::TOKEN;
 
 #[derive(Debug, Clone)]
 pub struct Lexer {
@@ -6,15 +8,26 @@ pub struct Lexer {
     position: usize,      //current position in input
     read_position: usize, //current reading position in input
     ch: char,
+    Keywords: HashMap<String, TOKEN>,
 }
 
 impl Lexer {
     pub fn new(input: String) -> Lexer {
+        let mut m = HashMap::new();
+        m.insert("fn".to_string(), TOKEN::FUNCTION);
+        m.insert("let".to_string(), TOKEN::LET);
+        m.insert("true".to_string(), TOKEN::TRUE);
+        m.insert("false".to_string(), TOKEN::FALSE);
+        m.insert("if".to_string(), TOKEN::IF);
+        m.insert("else".to_string(), TOKEN::ELSE);
+        m.insert("return".to_string(), TOKEN::RETURN);
+
         let mut l = Lexer {
             input,
             position: 0,
             read_position: 0,
             ch: '\0',
+            Keywords: m,
         };
         l.read_char();
         return l;
@@ -67,8 +80,8 @@ impl Lexer {
             '\0' => TOKEN::EOF,
             c if is_letter(c) => {
                 let str = self.read_identifier();
-                if KEYWORDS.contains_key(str.as_str()) {
-                    return KEYWORDS.get(str.as_str()).unwrap().clone();
+                if self.Keywords.contains_key(str.as_str()) {
+                    return self.Keywords.get(str.as_str()).unwrap().clone();
                 }
                 return TOKEN::IDENT(str);
             }

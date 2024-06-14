@@ -16,6 +16,8 @@ pub enum EvalErr {
     DivideByZero,
     #[error("Identifier {0} not found")]
     IdentifierNotFound(String),
+    #[error("{0}")]
+    ParseErr(#[from] super::parser_errs::ParseErr),
 }
 
 impl EvalErr {

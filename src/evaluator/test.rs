@@ -2,6 +2,7 @@
 mod tests {
 
     use crate::{
+        ast::ast::{Node, Statement},
         errors::eval_errs::EvalErr,
         evaluator::{environment::Environment, eval::*, object::Object},
         lexer::lexer::Lexer,
@@ -14,7 +15,7 @@ mod tests {
         let program = p.parse_program().unwrap();
         let mut env = Environment::new();
 
-        return eval(&program, &mut env);
+        return eval(&&Node::Statement(Statement::Program(program)), &mut env);
     }
 
     #[test]

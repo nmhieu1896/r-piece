@@ -20,8 +20,13 @@ pub enum Object<'a> {
 #[derive(Debug, Clone)]
 pub struct Function<'a> {
     pub params: Vec<Identifier>,
-    pub body: &'a BlockStatement,
+    pub body: BlockStatement,
     pub env: &'a Environment<'a>,
+}
+impl<'a> Function<'a> {
+    pub fn new(params: Vec<Identifier>, body: BlockStatement, env: &'a Environment<'a>) -> Self {
+        Self { params, body, env }
+    }
 }
 // impl PartialEq for Function<'a> {
 impl<'a> PartialEq for Function<'a> {

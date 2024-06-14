@@ -33,6 +33,11 @@ pub enum ParseErr {
     #[error("None")]
     None,
 
+    // Parse Node
+    #[error("To Expression Error: \nExpected: Expression | got {0:?}")]
+    ToExpression( String),
+    #[error("To Statement Error: \nExpected: Statement | got {0:?}")]
+    ToStatement( String),
     // Parse Expression
     #[error("To Ident Error: \nExpected: {0} | got {1:?}")]
     ToIdent(String, String),
@@ -56,9 +61,11 @@ pub enum ParseErr {
     #[error("To Return Error: \nExpected: {0} | got {1:?}")]
     ToReturn(String, String),
     #[error("To Expression Error: \nExpected: {0} | got {1:?}")]
-    ToExpression(String, String),
-    // #[error("To Block Error: \nExpected: {0} | got {1:?}")]
-    // ToBlock(String, String),
+    ToExpStmt(String, String),
+    #[error("To Program Error: \nExpected: {0} | got {1:?}")]
+    ToProgram(String, String),
+    #[error("To Block Error: \nExpected: {0} | got {1:?}")]
+    ToBlock(String, String),
 }
 
 impl ParseErr {

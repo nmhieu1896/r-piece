@@ -66,7 +66,7 @@ mod tests {
         };
         let p = program.unwrap();
         println!("{:#?}", p);
-        let exp = p.statements[0].to_expression().unwrap();
+        let exp = p.statements[0].to_exp_stmt().unwrap();
         assert_eq!(exp.token_literal(), "foobar".to_string());
         assert_eq!(exp.to_str(), "foobar".to_string());
         assert_eq!(exp.expression.unwrap().to_ident().unwrap(), "foobar");
@@ -86,7 +86,7 @@ mod tests {
         };
         let p = program.unwrap();
         println!("{:#?}", p);
-        let exp = p.statements[0].to_expression().unwrap();
+        let exp = p.statements[0].to_exp_stmt().unwrap();
         assert_eq!(exp.token_literal(), "5".to_string());
         assert_eq!(exp.to_str(), "5".to_string());
         assert_eq!(exp.expression.unwrap().to_num().unwrap(), 5);
@@ -106,7 +106,7 @@ mod tests {
             };
             println!("{:#?}", program);
             let p = program.unwrap();
-            let exp = p.statements[0].to_expression().unwrap();
+            let exp = p.statements[0].to_exp_stmt().unwrap();
             let prefix = exp.expression.unwrap().to_prefix().unwrap();
             assert_eq!(prefix.token.literal(), operator.to_string());
             assert_eq!(prefix.right.to_str(), value.to_string());
@@ -136,7 +136,7 @@ mod tests {
                 return;
             };
             let p = program.unwrap();
-            let exp = p.statements[0].to_expression().unwrap();
+            let exp = p.statements[0].to_exp_stmt().unwrap();
             let infix = exp.expression.unwrap().to_infix().unwrap();
             assert_eq!(infix.token_literal(), operator.to_string());
             assert_eq!(infix.left.to_str(), left_value.to_string());
@@ -179,7 +179,7 @@ mod tests {
             let p = program.unwrap();
 
             println!("p1: {:#?}", p);
-            let exp = p.statements[0].to_expression().unwrap();
+            let exp = p.statements[0].to_exp_stmt().unwrap();
             assert_eq!(exp.to_str(), expected)
         }
     }
@@ -203,7 +203,7 @@ mod tests {
                 assert!(false);
                 return;
             };
-            let exp = program.unwrap().statements[0].to_expression().unwrap();
+            let exp = program.unwrap().statements[0].to_exp_stmt().unwrap();
             assert_eq!(exp.to_str(), expected)
         }
     }
@@ -229,7 +229,7 @@ mod tests {
             assert!(false);
             return;
         };
-        let exp = program.unwrap().statements[0].to_expression().unwrap();
+        let exp = program.unwrap().statements[0].to_exp_stmt().unwrap();
         let if_exp = exp.expression.unwrap().to_if().unwrap();
         assert_eq!(if_exp.condition.to_str(), "(x < y)");
         assert_eq!(if_exp.consequence.to_str(), "{let x = 1; return x;}");
@@ -263,8 +263,8 @@ mod tests {
             }
             let p = program.unwrap();
             println!("p: {:#?}", p);
-            let exp = p.statements[0].to_expression().unwrap();
-            let fn_exp = exp.expression.unwrap().to_fn().unwrap();
+            let exp = p.statements[0].to_exp_stmt().unwrap();
+            let fn_exp = exp.expression.unwrap().to_function().unwrap();
             assert_eq!(fn_exp.body.to_str(), block_expect);
             assert_eq!(&fn_exp.parameters, parameters);
         }
@@ -304,7 +304,7 @@ mod tests {
             }
             let p = program.unwrap();
             println!("p: {:#?}", p);
-            let exp = p.statements[0].to_expression().unwrap();
+            let exp = p.statements[0].to_exp_stmt().unwrap();
             let call = exp.expression.unwrap().to_call().unwrap();
             assert_eq!(call.to_str(), expected_fn_call);
             for (idx, &exp) in expected_args.iter().enumerate() {

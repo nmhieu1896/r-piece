@@ -33,6 +33,20 @@ pub enum Node {
     Expression(Expression),
     Statement(Statement),
 }
+impl Node {
+    pub fn to_expression(&self) -> Result<Expression, ParseErr> {
+        match self {
+            Node::Expression(x) => Ok(x.clone()),
+            x => Err(ParseErr::ToExpression(x.token_literal())),
+        }
+    }
+    pub fn to_statement(&self) -> Result<Statement, ParseErr> {
+        match self {
+            Node::Statement(x) => Ok(x.clone()),
+            x => Err(ParseErr::ToStatement(x.token_literal())),
+        }
+    }
+}
 impl NodeTrait for Node {
     fn node_type(&self) -> NodeType {
         match self {
@@ -129,7 +143,7 @@ impl Expression {
             )),
         }
     }
-    pub fn to_fn(&self) -> Result<FunctionLiteral, ParseErr> {
+    pub fn to_function(&self) -> Result<FunctionLiteral, ParseErr> {
         match self {
             Expression::Function(x) => Ok(x.as_ref().clone()),
             anything => Err(ParseErr::ToFn(
@@ -183,7 +197,8 @@ pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
     Expression(ExpressionStatement),
-    // Block(BlockStatement),
+    Program(Program),
+    Block(BlockStatement),
 }
 impl Statement {
     pub fn to_let(&self) -> Result<LetStatement, ParseErr> {
@@ -198,18 +213,27 @@ impl Statement {
             x => Err(ParseErr::ToReturn("".to_string(), x.token_literal())),
         }
     }
-    pub fn to_expression(&self) -> Result<ExpressionStatement, ParseErr> {
+    pub fn to_exp_stmt(&self) -> Result<ExpressionStatement, ParseErr> {
         match self {
             Statement::Expression(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToExpression("".to_string(), x.token_literal())),
+            x => Err(ParseErr::ToExpStmt("".to_string(), x.token_literal())),
         }
     }
-    // pub fn to_block(&self) -> Result<BlockStatement, ParseErr> {
-    //     match self {
-    //         Statement::Block(x) => Ok(x.clone()),
-    //         x => Err(ParseErr::ToBlock("".to_string(), x.token_literal())),
-    //     }
-    // }
+    pub fn to_program(&self) -> Result<Program, ParseErr> {
+        match self {
+            Statement::Program(x) => Ok(x.clone()),
+            x => Err(ParseErr::ToProgram("".to_string(), x.token_literal())),
+        }
+    }
+    pub fn to_block(&self) -> Result<BlockStatement, ParseErr> {
+        match self {
+            Statement::Block(x) => Ok(x.clone()),
+            anything => Err(ParseErr::ToBlock(
+                "Block".to_string(),
+                anything.token_literal(),
+            )),
+        }
+    }
 }
 impl NodeTrait for Statement {
     fn node_type(&self) -> NodeType {
@@ -217,7 +241,8 @@ impl NodeTrait for Statement {
             Statement::Let(_) => NodeType::LetStatement,
             Statement::Return(_) => NodeType::ReturnStatement,
             Statement::Expression(_) => NodeType::ExpressionStatement,
-            // Statement::Block(_) => NodeType::BlockStatement,
+            Statement::Program(_) => NodeType::Program,
+            Statement::Block(_) => NodeType::BlockStatement,
         }
     }
     fn token_literal(&self) -> String {
@@ -225,7 +250,8 @@ impl NodeTrait for Statement {
             Statement::Let(x) => x.token_literal(),
             Statement::Return(x) => x.token_literal(),
             Statement::Expression(x) => x.token_literal(),
-            // Statement::Block(x) => x.token_literal(),
+            Statement::Program(x) => x.token_literal(),
+            Statement::Block(x) => x.token_literal(),
         }
     }
     fn to_str(&self) -> String {
@@ -233,7 +259,8 @@ impl NodeTrait for Statement {
             Statement::Let(x) => x.to_str(),
             Statement::Return(x) => x.to_str(),
             Statement::Expression(x) => x.to_str(),
-            // Statement::Block(x) => x.to_str(),
+            Statement::Program(x) => x.to_str(),
+            Statement::Block(x) => x.to_str(),
         }
     }
 }

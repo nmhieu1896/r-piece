@@ -1,71 +1,62 @@
 use crate::{
-    ast::ast::{
-        upcast_trait, BlockStatement, Boolean, ExpressionStatement, Identifier, IfExpression,
-        InfixExpression, Integer, LetStatement, Node, NodeType, PrefixExpression, Program,
-        ReturnStatement, Statement,
-    },
+    ast::ast::{IfExpression, Node, NodeTrait, NodeType, Statement},
     errors::eval_errs::EvalErr,
     lexer::token::TOKEN,
 };
 
 use super::{environment::Environment, object::Object};
 
-pub fn eval<'a>(node: &dyn Node, env: &mut Environment<'a>) -> Result<Object<'a>, EvalErr> {
+pub fn eval<'a>(node: &Node, env: &mut Environment<'a>) -> Result<Object<'a>, EvalErr> {
     match node.node_type() {
         NodeType::Program => {
-            return eval_statements(
-                &node.as_any().downcast_ref::<Program>().unwrap().statements,
-                env,
-            )
+            return eval_statements(&node.to_statement()?.to_program()?.statements, env)
         }
         NodeType::ExpressionStatement => {
-            let expr = node
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .unwrap()
-                .expression
-                .as_deref();
+            let expr = node.to_statement()?.to_exp_stmt()?.expression;
             if expr.is_none() {
                 return Ok(Object::Null);
             }
-            return eval(expr.unwrap(), env);
+            return eval(&Node::Expression(expr.unwrap()), env);
         }
         NodeType::PrefixExpression => {
-            let expr = node.as_any().downcast_ref::<PrefixExpression>().unwrap();
-            return eval_prefix_expression(expr.token.clone(), eval(expr.right.as_ref(), env)?);
+            let expr = node.to_expression()?.to_prefix()?;
+            return eval_prefix_expression(
+                expr.token.clone(),
+                eval(&Node::Expression(expr.right), env)?,
+            );
         }
         NodeType::InfixExpression => {
-            let expr = node.as_any().downcast_ref::<InfixExpression>().unwrap();
-            let left = eval(expr.left.as_ref(), env)?;
-            let right = eval(expr.right.as_ref(), env)?;
+            let expr = node.to_expression()?.to_infix()?;
+            let left = eval(&Node::Expression(expr.left), env)?;
+            let right = eval(&Node::Expression(expr.right), env)?;
             return eval_infix_expression(expr.operator.clone(), left, right);
         }
         NodeType::ReturnStatement => {
-            let expr = node.as_any().downcast_ref::<ReturnStatement>().unwrap();
+            let expr = node.to_statement()?.to_return()?;
             if expr.expression.is_none() {
                 return Ok(Object::Return(Box::new(Object::Null)));
             }
             return Ok(Object::Return(Box::new(eval(
-                expr.expression.as_deref().unwrap(),
+                &Node::Expression(expr.expression.unwrap()),
                 env,
             )?)));
         }
         NodeType::IfExpression => {
-            let expr = node.as_any().downcast_ref::<IfExpression>().unwrap();
+            let expr = node.to_expression()?.to_if()?;
             return eval_if_expression(expr, env);
         }
         NodeType::BlockStatement => {
-            let expr = node.as_any().downcast_ref::<BlockStatement>().unwrap();
+            let expr = node.to_statement()?.to_block()?;
             return eval_statements(&expr.statements, env);
         }
         NodeType::LetStatement => {
-            let expr = node.as_any().downcast_ref::<LetStatement>().unwrap();
-            let value = eval(expr.value.as_ref(), env)?;
+            let expr = node.to_statement()?.to_let()?;
+            let value = eval(&&Node::Expression(expr.value), env)?;
             env.set(expr.name.clone(), value);
             return Ok(Object::Null);
         }
         NodeType::Identifier => {
-            let key = node.as_any().downcast_ref::<Identifier>().unwrap().clone();
+            let key = node.to_expression()?.to_ident()?;
             let value = env.get(&key);
             if value.is_none() {
                 return Err(EvalErr::IdentifierNotFound(key));
@@ -73,16 +64,8 @@ pub fn eval<'a>(node: &dyn Node, env: &mut Environment<'a>) -> Result<Object<'a>
 
             return Ok(value.unwrap().clone());
         }
-        NodeType::Int => {
-            return Ok(Object::Number(
-                node.as_any().downcast_ref::<Integer>().unwrap().clone(),
-            ))
-        }
-        NodeType::Bool => {
-            return Ok(Object::Boolean(
-                node.as_any().downcast_ref::<Boolean>().unwrap().clone(),
-            ))
-        }
+        NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),
+        NodeType::Bool => return Ok(Object::Boolean(node.to_expression()?.to_bool()?)),
         _ => {
             return Err(EvalErr::NotImplemented(format!(
                 "{:?} is not implemented",
@@ -93,16 +76,13 @@ pub fn eval<'a>(node: &dyn Node, env: &mut Environment<'a>) -> Result<Object<'a>
 }
 
 fn eval_statements<'a>(
-    statements: &Vec<Box<dyn Statement>>,
+    statements: &Vec<Statement>,
     env: &mut Environment<'a>,
 ) -> Result<Object<'a>, EvalErr> {
     let mut result = Object::Null;
-    let vec = statements
-        .iter()
-        .map(|x| upcast_trait(x.as_ref()))
-        .collect::<Vec<&dyn Node>>();
-    for &stmt in vec.iter() {
-        result = eval(stmt, env)?;
+
+    for stmt in statements.iter() {
+        result = eval(&Node::Statement(stmt.clone()), env)?;
         if result.is_return() {
             return Ok(result);
         }
@@ -190,10 +170,10 @@ fn eval_infix_expression<'a>(
 }
 
 fn eval_if_expression<'a>(
-    expression: &IfExpression,
+    expression: IfExpression,
     env: &mut Environment<'a>,
 ) -> Result<Object<'a>, EvalErr> {
-    let condition = eval(expression.condition.as_ref(), env)?;
+    let condition = eval(&Node::Expression(expression.condition), env)?;
     if is_truthy(condition) {
         return eval_statements(&expression.consequence.statements, env);
     }
