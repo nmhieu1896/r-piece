@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     ast::ast::{IfExpression, Node, NodeTrait, NodeType, Statement},
     errors::eval_errs::EvalErr,
@@ -6,29 +8,32 @@ use crate::{
 
 use super::{environment::Environment, object::Object};
 
-pub fn eval<'a>(node: &Node, env: &mut Environment<'a>) -> Result<Object<'a>, EvalErr> {
+pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<'a>, EvalErr> {
     match node.node_type() {
         NodeType::Program => {
-            return eval_statements(&node.to_statement()?.to_program()?.statements, env)
+            return eval_statements(
+                &node.to_statement()?.to_program()?.statements,
+                Rc::clone(&env),
+            )
         }
         NodeType::ExpressionStatement => {
             let expr = node.to_statement()?.to_exp_stmt()?.expression;
             if expr.is_none() {
                 return Ok(Object::Null);
             }
-            return eval(&Node::Expression(expr.unwrap()), env);
+            return eval(Node::Expression(expr.unwrap()), Rc::clone(&env));
         }
         NodeType::PrefixExpression => {
             let expr = node.to_expression()?.to_prefix()?;
             return eval_prefix_expression(
                 expr.token.clone(),
-                eval(&Node::Expression(expr.right), env)?,
+                eval(Node::Expression(expr.right), Rc::clone(&env))?,
             );
         }
         NodeType::InfixExpression => {
             let expr = node.to_expression()?.to_infix()?;
-            let left = eval(&Node::Expression(expr.left), env)?;
-            let right = eval(&Node::Expression(expr.right), env)?;
+            let left = eval(Node::Expression(expr.left), Rc::clone(&env))?;
+            let right = eval(Node::Expression(expr.right), Rc::clone(&env))?;
             return eval_infix_expression(expr.operator.clone(), left, right);
         }
         NodeType::ReturnStatement => {
@@ -37,27 +42,28 @@ pub fn eval<'a>(node: &Node, env: &mut Environment<'a>) -> Result<Object<'a>, Ev
                 return Ok(Object::Return(Box::new(Object::Null)));
             }
             return Ok(Object::Return(Box::new(eval(
-                &Node::Expression(expr.expression.unwrap()),
-                env,
+                Node::Expression(expr.expression.unwrap()),
+                Rc::clone(&env),
             )?)));
         }
         NodeType::IfExpression => {
             let expr = node.to_expression()?.to_if()?;
-            return eval_if_expression(expr, env);
+            return eval_if_expression(expr, Rc::clone(&env));
         }
         NodeType::BlockStatement => {
             let expr = node.to_statement()?.to_block()?;
-            return eval_statements(&expr.statements, env);
+            return eval_statements(&expr.statements, Rc::clone(&env));
         }
         NodeType::LetStatement => {
             let expr = node.to_statement()?.to_let()?;
-            let value = eval(&&Node::Expression(expr.value), env)?;
-            env.set(expr.name.clone(), value);
+            let value = eval(Node::Expression(expr.value), Rc::clone(&env))?;
+            env.borrow_mut().set(expr.name.clone(), value);
             return Ok(Object::Null);
         }
         NodeType::Identifier => {
             let key = node.to_expression()?.to_ident()?;
-            let value = env.get(&key);
+            let borrow_env = env.borrow();
+            let value = borrow_env.get(&key);
             if value.is_none() {
                 return Err(EvalErr::IdentifierNotFound(key));
             }
@@ -77,12 +83,12 @@ pub fn eval<'a>(node: &Node, env: &mut Environment<'a>) -> Result<Object<'a>, Ev
 
 fn eval_statements<'a>(
     statements: &Vec<Statement>,
-    env: &mut Environment<'a>,
+    env: Rc<RefCell<Environment<'a>>>,
 ) -> Result<Object<'a>, EvalErr> {
     let mut result = Object::Null;
 
     for stmt in statements.iter() {
-        result = eval(&Node::Statement(stmt.clone()), env)?;
+        result = eval(Node::Statement(stmt.clone()), Rc::clone(&env))?;
         if result.is_return() {
             return Ok(result);
         }
@@ -171,14 +177,14 @@ fn eval_infix_expression<'a>(
 
 fn eval_if_expression<'a>(
     expression: IfExpression,
-    env: &mut Environment<'a>,
+    env: Rc<RefCell<Environment<'a>>>,
 ) -> Result<Object<'a>, EvalErr> {
-    let condition = eval(&Node::Expression(expression.condition), env)?;
+    let condition = eval(Node::Expression(expression.condition), Rc::clone(&env))?;
     if is_truthy(condition) {
-        return eval_statements(&expression.consequence.statements, env);
+        return eval_statements(&expression.consequence.statements, Rc::clone(&env));
     }
     if let Some(alternative) = &expression.alternative {
-        return eval_statements(&alternative.statements, env);
+        return eval_statements(&alternative.statements, Rc::clone(&env));
     }
     return Ok(Object::Null);
 }

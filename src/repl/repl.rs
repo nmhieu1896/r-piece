@@ -1,4 +1,8 @@
-use std::io::{self, Write};
+use std::{
+    cell::RefCell,
+    io::{self, Write},
+    rc::Rc,
+};
 
 use crate::evaluator::environment::Environment;
 #[allow(unused)]
@@ -10,7 +14,7 @@ use crate::{
 
 pub fn run_repl() {
     println!("Welcome to the REPL CLI. Type 'exit' to quit.");
-    let mut env = Environment::new();
+    let env = Rc::new(RefCell::new(Environment::new()));
 
     loop {
         print!(">> ");
@@ -33,7 +37,7 @@ pub fn run_repl() {
         match program {
             Ok(p) => {
                 println!("{:?}", stringnify_stmt(&p.statements));
-                let x = eval(&Node::Statement(Statement::Program(p)), &mut env);
+                let x = eval(Node::Statement(Statement::Program(p)), Rc::clone(&env));
                 if x.is_err() {
                     println!("{:?}", x.unwrap_err().to_string());
                 } else {

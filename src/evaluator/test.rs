@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
 
+    use std::{cell::RefCell, rc::Rc};
+
     use crate::{
         ast::ast::{Node, Statement},
         errors::eval_errs::EvalErr,
@@ -13,9 +15,12 @@ mod tests {
         let l = Lexer::new(input.to_string());
         let mut p = Parser::new(l);
         let program = p.parse_program().unwrap();
-        let mut env = Environment::new();
+        let env = Rc::new(RefCell::new(Environment::new()));
 
-        return eval(&&Node::Statement(Statement::Program(program)), &mut env);
+        return eval(
+            Node::Statement(Statement::Program(program)),
+            Rc::clone(&env),
+        );
     }
 
     #[test]
