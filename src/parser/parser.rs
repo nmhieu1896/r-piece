@@ -333,6 +333,9 @@ impl Parser {
     pub fn parse_call_expression(&mut self, function: Expression) -> Result<Expression, ParseErr> {
         let mut call = CallExpression::new(function);
         call.arguments = self.parse_call_args()?;
+        if self.peek_token.is_same_with(TOKEN::RPAREN) {
+            self.next_token();
+        }
         return Ok(Expression::Call(Box::new(call)));
     }
     // call this when current token is "("

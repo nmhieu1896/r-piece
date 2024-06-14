@@ -16,7 +16,7 @@ mod tests {
         let mut p = Parser::new(l);
         let program = p.parse_program().unwrap();
         let env = Rc::new(RefCell::new(Environment::new()));
-
+        println!("{:#?}", program);
         return eval(
             Node::Statement(Statement::Program(program)),
             Rc::clone(&env),
@@ -113,7 +113,7 @@ mod tests {
             ("return true", Object::Boolean(true)),
             ("return false", Object::Boolean(false)),
             (
-                "#
+                "
                 if (10 > 1) {
                     if (10 > 1) {
                         return 10;
@@ -121,7 +121,7 @@ mod tests {
                     return 1;
                 }
                 return 5;
-            #",
+            ",
                 Object::Number(10),
             ),
             ("return", Object::Null),
@@ -193,7 +193,7 @@ mod tests {
     }
 
     #[test]
-    fn test_call() {
+    fn test_call_fn() {
         let tests = vec![
             (
                 "let x = fn(a, b) { return a + b; }; x(5, 5)",
@@ -210,6 +210,20 @@ mod tests {
             ("fn(x) { x; }(5)", Object::Number(5)),
             ("fn(x) { x; }(true)", Object::Boolean(true)),
             ("fn(x) { x; }(5>3)", Object::Boolean(true)),
+            ("fn(x) { x > 3; }( 10 )", Object::Boolean(true)),
+            ("fn(x) { x < 3; }( 10 )", Object::Boolean(false)),
+            ("let x = 10 ;fn() { x < 3; }()", Object::Boolean(false)),
+            ("let x = 10 ;fn() { x > 3; }()", Object::Boolean(true)),
+            (
+                "
+            let newAdder = fn(x) {
+                fn(y) { x + y };
+            };
+            let addTwo = newAdder(2);
+            addTwo(2)
+            ",
+                Object::Number(4),
+            ),
         ];
         for (input, expected) in tests.into_iter() {
             let obj = test_eval(input).unwrap();

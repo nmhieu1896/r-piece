@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    ast::ast::{Expression, Identifier, IfExpression, Node, NodeTrait, NodeType, Statement},
+    ast::ast::{Expression, IfExpression, Node, NodeTrait, NodeType, Statement},
     errors::eval_errs::EvalErr,
     lexer::token::TOKEN,
 };
@@ -88,12 +88,6 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         }
         NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),
         NodeType::Bool => return Ok(Object::Boolean(node.to_expression()?.to_bool()?)),
-        _ => {
-            return Err(EvalErr::NotImplemented(format!(
-                "{:?} is not implemented",
-                node.node_type(),
-            )))
-        }
     }
 }
 
@@ -248,6 +242,6 @@ fn extend_fn_env<'a>(
 fn unwrap_return<'a>(value: Object<'a>) -> Result<Object<'a>, EvalErr> {
     match value {
         Object::Return(v) => Ok(v.as_ref().clone()),
-        _ => Ok(Object::Null),
+        obj => Ok(obj),
     }
 }

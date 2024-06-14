@@ -8,7 +8,7 @@ use crate::{
 
 use super::environment::Environment;
 
-// #[allow(unused)]
+#[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object<'a> {
     Number(i64),
