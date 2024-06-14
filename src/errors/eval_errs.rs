@@ -2,7 +2,7 @@ use std::mem::discriminant;
 
 use thiserror::Error;
 
-use super::coerce_errs::CoerceErr;
+use super::{coerce_errs::CoerceErr, parser_errs::ParseErr};
 
 #[derive(Debug, Error)]
 pub enum EvalErr {
@@ -17,7 +17,7 @@ pub enum EvalErr {
     #[error("Identifier {0} not found")]
     IdentifierNotFound(String),
     #[error("{0}")]
-    ParseErr(#[from] super::parser_errs::ParseErr),
+    ParseErr(#[from] ParseErr),
 }
 
 impl EvalErr {

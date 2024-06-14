@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
     ast::ast::{BlockStatement, Identifier},
     errors::coerce_errs::CoerceErr,
@@ -21,10 +23,14 @@ pub enum Object<'a> {
 pub struct Function<'a> {
     pub params: Vec<Identifier>,
     pub body: BlockStatement,
-    pub env: &'a Environment<'a>,
+    pub env: Rc<RefCell<Environment<'a>>>,
 }
 impl<'a> Function<'a> {
-    pub fn new(params: Vec<Identifier>, body: BlockStatement, env: &'a Environment<'a>) -> Self {
+    pub fn new(
+        params: Vec<Identifier>,
+        body: BlockStatement,
+        env: Rc<RefCell<Environment<'a>>>,
+    ) -> Self {
         Self { params, body, env }
     }
 }

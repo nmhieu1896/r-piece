@@ -35,9 +35,9 @@ pub enum ParseErr {
 
     // Parse Node
     #[error("To Expression Error: \nExpected: Expression | got {0:?}")]
-    ToExpression( String),
+    ToExpression(String),
     #[error("To Statement Error: \nExpected: Statement | got {0:?}")]
-    ToStatement( String),
+    ToStatement(String),
     // Parse Expression
     #[error("To Ident Error: \nExpected: {0} | got {1:?}")]
     ToIdent(String, String),
@@ -54,7 +54,7 @@ pub enum ParseErr {
     #[error("To If Error: \nExpected: {0} | got {1:?}")]
     ToIf(String, String),
     #[error("To Function Error: \nExpected: {0} | got {1:?}")]
-    ToFn(String, String),
+    ToFunction(String, String),
     // Parse Statement
     #[error("To Let Error: \nExpected: {0} | got {1:?}")]
     ToLet(String, String),

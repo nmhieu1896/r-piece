@@ -1,12 +1,15 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    ast::ast::{IfExpression, Node, NodeTrait, NodeType, Statement},
+    ast::ast::{Expression, Identifier, IfExpression, Node, NodeTrait, NodeType, Statement},
     errors::eval_errs::EvalErr,
     lexer::token::TOKEN,
 };
 
-use super::{environment::Environment, object::Object};
+use super::{
+    environment::Environment,
+    object::{Function, Object},
+};
 
 pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<'a>, EvalErr> {
     match node.node_type() {
@@ -60,15 +63,28 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
             env.borrow_mut().set(expr.name.clone(), value);
             return Ok(Object::Null);
         }
+        NodeType::FunctionLiteral => {
+            let expr = node.to_expression()?.to_function()?;
+            return Ok(Object::Function(Function::new(
+                expr.parameters.clone(),
+                expr.body.clone(),
+                Rc::clone(&env),
+            )));
+        }
+        NodeType::CallExpression => {
+            let expr = node.to_expression()?.to_call()?;
+            let function = eval(Node::Expression(expr.function), Rc::clone(&env))?;
+
+            let args = eval_call_args(&expr.arguments, Rc::clone(&env))?;
+            return apply_function(function, args);
+            // return Ok(Object::Call(Box::new(Call::new(function, args))));
+        }
         NodeType::Identifier => {
             let key = node.to_expression()?.to_ident()?;
             let borrow_env = env.borrow();
-            let value = borrow_env.get(&key);
-            if value.is_none() {
-                return Err(EvalErr::IdentifierNotFound(key));
-            }
+            let value = borrow_env.get(&key)?;
 
-            return Ok(value.unwrap().clone());
+            return Ok(value.clone());
         }
         NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),
         NodeType::Bool => return Ok(Object::Boolean(node.to_expression()?.to_bool()?)),
@@ -187,4 +203,51 @@ fn eval_if_expression<'a>(
         return eval_statements(&alternative.statements, Rc::clone(&env));
     }
     return Ok(Object::Null);
+}
+
+fn eval_call_args<'a>(
+    args: &Vec<Expression>,
+    env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Vec<Object<'a>>, EvalErr> {
+    let mut output: Vec<Object> = vec![];
+    for arg in args.iter() {
+        output.push(eval(Node::Expression(arg.clone()), Rc::clone(&env))?);
+    }
+    return Ok(output);
+}
+
+fn apply_function<'a>(function: Object<'a>, args: Vec<Object<'a>>) -> Result<Object<'a>, EvalErr> {
+    let func = match function {
+        Object::Function(f) => f,
+        _ => {
+            return Err(EvalErr::NotImplemented(format!(
+                "{:?} is not a function",
+                function
+            )))
+        }
+    };
+    let extended_env = extend_fn_env(&func, args);
+    let evaluated = eval_statements(&func.body.statements, Rc::clone(&extended_env))?;
+    return unwrap_return(evaluated);
+}
+
+fn extend_fn_env<'a>(
+    function: &Function<'a>,
+    args: Vec<Object<'a>>,
+) -> Rc<RefCell<Environment<'a>>> {
+    let env = Rc::new(RefCell::new(Environment::new_with_outer(Rc::clone(
+        &function.env,
+    ))));
+    for (idx, param) in function.params.iter().enumerate() {
+        env.borrow_mut().set(param.clone(), args[idx].clone());
+    }
+
+    return env;
+}
+
+fn unwrap_return<'a>(value: Object<'a>) -> Result<Object<'a>, EvalErr> {
+    match value {
+        Object::Return(v) => Ok(v.as_ref().clone()),
+        _ => Ok(Object::Null),
+    }
 }

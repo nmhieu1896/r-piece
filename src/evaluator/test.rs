@@ -4,7 +4,7 @@ mod tests {
     use std::{cell::RefCell, rc::Rc};
 
     use crate::{
-        ast::ast::{Node, Statement},
+        ast::ast::{Node, NodeTrait, Statement},
         errors::eval_errs::EvalErr,
         evaluator::{environment::Environment, eval::*, object::Object},
         lexer::lexer::Lexer,
@@ -156,6 +156,62 @@ mod tests {
             ),
         ];
         for (input, expected) in test.into_iter() {
+            let obj = test_eval(input).unwrap();
+            assert_eq!(obj, expected);
+        }
+    }
+
+    #[test]
+    fn test_function() {
+        let args1 = vec!["a", "b"];
+        let args2 = vec!["a", "b", "c"];
+        let args3 = vec!["a", "b", "c", "d"];
+        let test = vec![
+            ("fn(a, b) { return a + b; }; ", args1, "{return (a + b);}"),
+            (
+                "fn(a, b, c) { return a + b + c; };",
+                args2,
+                "{return ((a + b) + c);}",
+            ),
+            (
+                "fn(a, b, c, d) { return a + b + c +d; }; ",
+                args3,
+                "{return (((a + b) + c) + d);}",
+            ),
+        ];
+        for (input, args, expected) in test.into_iter() {
+            let obj = test_eval(input).unwrap();
+            println!("{:?}", obj);
+            match obj {
+                Object::Function(f) => {
+                    assert_eq!(f.params, args);
+                    assert_eq!(f.body.to_str(), expected);
+                }
+                anything => panic!("{:?}", anything),
+            }
+        }
+    }
+
+    #[test]
+    fn test_call() {
+        let tests = vec![
+            (
+                "let x = fn(a, b) { return a + b; }; x(5, 5)",
+                Object::Number(10),
+            ),
+            (
+                "let x = fn(a, b, c) { return a + b + c; }; x(5, 5, 5)",
+                Object::Number(15),
+            ),
+            (
+                "let y = fn(a, b, c, d) { return a + b + c * d; }; y(5, 5, 5, 5)",
+                Object::Number(35),
+            ),
+            ("fn(x) { x; }(5)", Object::Number(5)),
+            ("fn(x) { x; }(true)", Object::Boolean(true)),
+            ("fn(x) { x; }(5>3)", Object::Boolean(true)),
+        ];
+        for (input, expected) in tests.into_iter() {
             let obj = test_eval(input).unwrap();
             assert_eq!(obj, expected);
         }

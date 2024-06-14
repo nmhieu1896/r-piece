@@ -8,7 +8,7 @@ pub struct Lexer {
     position: usize,      //current position in input
     read_position: usize, //current reading position in input
     ch: char,
-    Keywords: HashMap<String, TOKEN>,
+    keywords: HashMap<String, TOKEN>,
 }
 
 impl Lexer {
@@ -27,7 +27,7 @@ impl Lexer {
             position: 0,
             read_position: 0,
             ch: '\0',
-            Keywords: m,
+            keywords: m,
         };
         l.read_char();
         return l;
@@ -80,8 +80,8 @@ impl Lexer {
             '\0' => TOKEN::EOF,
             c if is_letter(c) => {
                 let str = self.read_identifier();
-                if self.Keywords.contains_key(str.as_str()) {
-                    return self.Keywords.get(str.as_str()).unwrap().clone();
+                if self.keywords.contains_key(str.as_str()) {
+                    return self.keywords.get(str.as_str()).unwrap().clone();
                 }
                 return TOKEN::IDENT(str);
             }

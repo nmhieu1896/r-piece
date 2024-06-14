@@ -146,7 +146,7 @@ impl Expression {
     pub fn to_function(&self) -> Result<FunctionLiteral, ParseErr> {
         match self {
             Expression::Function(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToFn(
+            anything => Err(ParseErr::ToFunction(
                 "Function Literal".to_string(),
                 anything.token_literal(),
             )),
@@ -460,12 +460,14 @@ impl NodeTrait for Boolean {
 pub struct FunctionLiteral {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
+    pub name: Option<Identifier>,
 }
 impl FunctionLiteral {
     pub fn new(parameters: Vec<Identifier>) -> Self {
         Self {
             parameters: parameters,
             body: BlockStatement { statements: vec![] },
+            name: None,
         }
     }
 }
