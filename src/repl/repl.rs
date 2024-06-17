@@ -36,7 +36,7 @@ pub fn run_repl() {
         let program = p.parse_program();
         match program {
             Ok(p) => {
-                println!("{:?}", stringnify_stmt(&p.statements));
+                // println!("{:?}", stringnify_stmt(&p.statements));
                 let x = eval(Node::Statement(Statement::Program(p)), Rc::clone(&env));
                 if x.is_err() {
                     println!("{:?}", x.unwrap_err().to_string());

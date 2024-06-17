@@ -13,6 +13,7 @@ pub enum TOKEN {
     // Identifiers + literals
     IDENT(Identifier),
     NUMBER(Number),
+    STRING(String),
 
     // Operators
     ASSIGN,
@@ -69,11 +70,14 @@ impl TOKEN {
             TOKEN::RETURN => String::from("RETURN"),
             TOKEN::TRUE => String::from("true"),
             TOKEN::FALSE => String::from("false"),
+            TOKEN::ELSE => String::from("else"),
+            TOKEN::IF => String::from("if"),
+            TOKEN::FUNCTION => String::from("fn"),
             //
             TOKEN::ILLEGAL(c) => String::from(*c),
             TOKEN::IDENT(s) => s.clone(),
             TOKEN::NUMBER(n) => n.to_string(),
-            _ => String::from("not_defined_yet"),
+            TOKEN::STRING(n) => n.to_string(),
         }
     }
     pub fn to_type_name(&self) -> String {
@@ -105,6 +109,7 @@ impl TOKEN {
             //
             TOKEN::IDENT(_) => String::from("IDENT"),
             TOKEN::NUMBER(_) => String::from("NUMBER"),
+            TOKEN::STRING(_) => String::from("STRING"),
             TOKEN::ILLEGAL(_) => String::from("ILLEGAL"),
         }
     }
