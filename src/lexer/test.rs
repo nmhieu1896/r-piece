@@ -107,7 +107,7 @@ mod tests {
             TOKEN::STRING("far \" boo".to_string()),
             TOKEN::EOF,
         ];
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input);
 
         for token in tokens.iter() {
             assert_eq!(l.next_token(), *token);

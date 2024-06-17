@@ -20,7 +20,7 @@ mod tests {
         ];
 
         for &(input, keyword, ident, val) in let_inputs.iter() {
-            let l = Lexer::new(input.to_string());
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {
@@ -36,7 +36,7 @@ mod tests {
             assert_eq!(let_stmt.value.to_str(), val.to_string());
         }
         for &(input, keyword, val) in return_inputs.iter() {
-            let l = Lexer::new(input.to_string());
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {
@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     fn test_identifier_expression() {
-        let input = "foobar;".to_string();
+        let input = "foobar;";
 
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_int_expression() {
-        let input = "5;".to_string();
+        let input = "5;";
 
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
@@ -96,7 +96,7 @@ mod tests {
         let inputs = vec![("!5;", "!", 5), ("-15;", "-", 15)];
 
         for (input, operator, value) in inputs.into_iter() {
-            let l = Lexer::new(input.to_string());
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {
@@ -127,7 +127,7 @@ mod tests {
         ];
 
         for (input, left_value, operator, right_value) in inputs.into_iter() {
-            let l = Lexer::new(input.to_string());
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {
@@ -167,8 +167,8 @@ mod tests {
             ),
         ];
 
-        for &(str, expected) in tests.iter() {
-            let l = Lexer::new(str.to_string());
+        for &(input, expected) in tests.iter() {
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {
@@ -194,8 +194,8 @@ mod tests {
             ("!(true == true)", "(!(true == true))"),
         ];
 
-        for &(str1, expected) in tests.iter() {
-            let l1 = Lexer::new(str1.to_string());
+        for &(input, expected) in tests.iter() {
+            let l1 = Lexer::new(input);
             let mut p1 = Parser::new(l1);
             let program = p1.parse_program();
             if program.is_err() {
@@ -220,7 +220,7 @@ mod tests {
         }
         "#;
 
-        let l = Lexer::new(input.to_string());
+        let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
         println!("p1: {:#?}", program);
@@ -253,7 +253,7 @@ mod tests {
         ];
 
         for &(input, parameters, block_expect) in inputs.iter() {
-            let l = Lexer::new(input.to_string());
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {
@@ -294,7 +294,7 @@ mod tests {
         ];
 
         for &(input, expected_args, expected_fn_call) in tests.iter() {
-            let l = Lexer::new(input.to_string());
+            let l = Lexer::new(input);
             let mut p = Parser::new(l);
             let program = p.parse_program();
             if program.is_err() {

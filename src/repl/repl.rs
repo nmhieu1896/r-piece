@@ -30,7 +30,7 @@ pub fn run_repl() {
             break;
         }
 
-        let l = Lexer::new(input.to_string());
+        let l = Lexer::new(&input);
         let mut p = Parser::new(l.clone());
 
         let program = p.parse_program();

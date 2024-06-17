@@ -1,20 +1,17 @@
 use std::collections::HashMap;
 
 use super::token::TOKEN;
-// use std::{iter::Peekable, str::Chars};
+use std::{iter::Peekable, str::Chars};
 
 #[derive(Debug, Clone)]
-pub struct Lexer {
-    input: String,
-    position: usize,      //current position in input
-    read_position: usize, //current reading position in input
-    // input: Peekable<Chars<'a>>,
+pub struct Lexer<'a> {
+    input: Peekable<Chars<'a>>,
     ch: char,
     keywords: HashMap<String, TOKEN>,
 }
 
-impl Lexer {
-    pub fn new(input: String) -> Lexer {
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a str) -> Lexer<'a> {
         let mut m = HashMap::new();
         m.insert("fn".to_string(), TOKEN::FUNCTION);
         m.insert("let".to_string(), TOKEN::LET);
@@ -25,10 +22,7 @@ impl Lexer {
         m.insert("return".to_string(), TOKEN::RETURN);
 
         let mut l = Lexer {
-            // input: input.chars().peekable(),
-            input,
-            position: 0,
-            read_position: 0,
+            input: input.chars().peekable(),
             ch: '\0',
             keywords: m,
         };
@@ -37,26 +31,14 @@ impl Lexer {
     }
 
     pub fn read_char(&mut self) {
-        // self.ch = if self.input.peek().is_none() {
-        //     '\0'
-        // } else {
-        //     self.input.next().unwrap()
-        // }
-        if self.read_position >= self.input.len() {
-            self.ch = '\0';
+        self.ch = if self.input.peek().is_none() {
+            '\0'
         } else {
-            self.ch = self.input.chars().nth(self.read_position).unwrap();
+            self.input.next().unwrap()
         }
-        self.position = self.read_position;
-        self.read_position += 1;
     }
     pub fn read_peek(&mut self) -> char {
-        // self.input.peek().unwrap_or(&'\0').clone()
-        if self.read_position >= self.input.len() {
-            return '\0';
-        } else {
-            return self.input.chars().nth(self.read_position).unwrap();
-        }
+        self.input.peek().unwrap_or(&'\0').clone()
     }
 
     pub fn next_token(&mut self) -> TOKEN {

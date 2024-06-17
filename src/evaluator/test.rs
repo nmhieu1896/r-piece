@@ -12,7 +12,7 @@ mod tests {
     };
 
     fn test_eval(input: &str) -> Result<Object, EvalErr> {
-        let l = Lexer::new(input.to_string());
+        let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program().unwrap();
         let env = Rc::new(RefCell::new(Environment::new()));
