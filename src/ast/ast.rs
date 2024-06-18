@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{errors::parser_errs::ParseErr, lexer::token::TOKEN};
+use crate::{errors::coerce_errs::CoerceErr, lexer::token::TOKEN};
 
 #[derive(Debug, Clone)]
 pub enum NodeType {
@@ -35,16 +35,16 @@ pub enum Node {
     Statement(Statement),
 }
 impl Node {
-    pub fn to_expression(&self) -> Result<Expression, ParseErr> {
+    pub fn to_expression(&self) -> Result<Expression, CoerceErr> {
         match self {
             Node::Expression(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToExpression(x.token_literal())),
+            x => Err(CoerceErr::ToExpression(x.token_literal())),
         }
     }
-    pub fn to_statement(&self) -> Result<Statement, ParseErr> {
+    pub fn to_statement(&self) -> Result<Statement, CoerceErr> {
         match self {
             Node::Statement(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToStatement(x.token_literal())),
+            x => Err(CoerceErr::ToStatement(x.token_literal())),
         }
     }
 }
@@ -82,58 +82,58 @@ pub enum Expression {
     Function(Box<FunctionLiteral>),
 }
 impl Expression {
-    pub fn to_ident(&self) -> Result<Identifier, ParseErr> {
+    pub fn to_ident(&self) -> Result<Identifier, CoerceErr> {
         match self {
             Expression::Identifier(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToIdent(anything.token_literal())),
+            anything => Err(CoerceErr::ToIdent(anything.token_literal())),
         }
     }
-    pub fn to_string_value(&self) -> Result<String, ParseErr> {
+    pub fn to_string_value(&self) -> Result<String, CoerceErr> {
         match self {
             Expression::String(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToString(anything.token_literal())),
+            anything => Err(CoerceErr::ToString(anything.token_literal())),
         }
     }
-    pub fn to_num(&self) -> Result<Number, ParseErr> {
+    pub fn to_num(&self) -> Result<Number, CoerceErr> {
         match self {
             Expression::Number(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToNum(anything.token_literal())),
+            anything => Err(CoerceErr::ToNum(anything.token_literal())),
         }
     }
-    pub fn to_bool(&self) -> Result<bool, ParseErr> {
+    pub fn to_bool(&self) -> Result<bool, CoerceErr> {
         match self {
             Expression::Bool(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToBool(anything.token_literal())),
+            anything => Err(CoerceErr::ToBool(anything.token_literal())),
         }
     }
-    pub fn to_prefix(&self) -> Result<PrefixExpression, ParseErr> {
+    pub fn to_prefix(&self) -> Result<PrefixExpression, CoerceErr> {
         match self {
             Expression::Prefix(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToPrefix(anything.token_literal())),
+            anything => Err(CoerceErr::ToPrefix(anything.token_literal())),
         }
     }
-    pub fn to_infix(&self) -> Result<InfixExpression, ParseErr> {
+    pub fn to_infix(&self) -> Result<InfixExpression, CoerceErr> {
         match self {
             Expression::Infix(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToInfix(anything.token_literal())),
+            anything => Err(CoerceErr::ToInfix(anything.token_literal())),
         }
     }
-    pub fn to_call(&self) -> Result<CallExpression, ParseErr> {
+    pub fn to_call(&self) -> Result<CallExpression, CoerceErr> {
         match self {
             Expression::Call(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToCall(anything.token_literal())),
+            anything => Err(CoerceErr::ToCall(anything.token_literal())),
         }
     }
-    pub fn to_if(&self) -> Result<IfExpression, ParseErr> {
+    pub fn to_if(&self) -> Result<IfExpression, CoerceErr> {
         match self {
             Expression::If(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToIf(anything.token_literal())),
+            anything => Err(CoerceErr::ToIf(anything.token_literal())),
         }
     }
-    pub fn to_function(&self) -> Result<FunctionLiteral, ParseErr> {
+    pub fn to_function(&self) -> Result<FunctionLiteral, CoerceErr> {
         match self {
             Expression::Function(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToFunction(anything.token_literal())),
+            anything => Err(CoerceErr::ToFunction(anything.token_literal())),
         }
     }
 }
@@ -189,34 +189,34 @@ pub enum Statement {
     Block(BlockStatement),
 }
 impl Statement {
-    pub fn to_let(&self) -> Result<LetStatement, ParseErr> {
+    pub fn to_let(&self) -> Result<LetStatement, CoerceErr> {
         match self {
             Statement::Let(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToLet(x.token_literal())),
+            x => Err(CoerceErr::ToLet(x.token_literal())),
         }
     }
-    pub fn to_return(&self) -> Result<ReturnStatement, ParseErr> {
+    pub fn to_return(&self) -> Result<ReturnStatement, CoerceErr> {
         match self {
             Statement::Return(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToReturn(x.token_literal())),
+            x => Err(CoerceErr::ToReturn(x.token_literal())),
         }
     }
-    pub fn to_exp_stmt(&self) -> Result<ExpressionStatement, ParseErr> {
+    pub fn to_exp_stmt(&self) -> Result<ExpressionStatement, CoerceErr> {
         match self {
             Statement::Expression(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToExpStmt(x.token_literal())),
+            x => Err(CoerceErr::ToExpStmt(x.token_literal())),
         }
     }
-    pub fn to_program(&self) -> Result<Program, ParseErr> {
+    pub fn to_program(&self) -> Result<Program, CoerceErr> {
         match self {
             Statement::Program(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToProgram(x.token_literal())),
+            x => Err(CoerceErr::ToProgram(x.token_literal())),
         }
     }
-    pub fn to_block(&self) -> Result<BlockStatement, ParseErr> {
+    pub fn to_block(&self) -> Result<BlockStatement, CoerceErr> {
         match self {
             Statement::Block(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToBlock(anything.token_literal())),
+            anything => Err(CoerceErr::ToBlock(anything.token_literal())),
         }
     }
 }

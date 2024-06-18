@@ -6,18 +6,20 @@ use super::{coerce_errs::CoerceErr, parser_errs::ParseErr};
 
 #[derive(Debug, Error)]
 pub enum EvalErr {
+    //Derived Errors
+    #[error("{0} ")]
+    CoerceErr(#[from] CoerceErr),
+    #[error("{0}")]
+    ParseErr(#[from] ParseErr),
+
     #[error("{0}")]
     NotImplemented(String),
     #[error("Minus Prefix must be followed by a number, got {0:?}")]
     MinusPrefix(String),
-    #[error("{0} ")]
-    CoerceErr(#[from] CoerceErr),
     #[error("Cannot divide by zero")]
     DivideByZero,
     #[error("Identifier {0} not found")]
     IdentifierNotFound(String),
-    #[error("{0}")]
-    ParseErr(#[from] ParseErr),
 
     #[error("Cannot add {0} and {1}")]
     PlusError(String, String),
