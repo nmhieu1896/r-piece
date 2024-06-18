@@ -61,7 +61,7 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::LetStatement => {
             let expr = node.to_statement()?.to_let()?;
             let value = eval(Node::Expression(expr.value), Rc::clone(&env))?;
-            env.borrow_mut().set(expr.name.0.clone(), value);
+            env.borrow_mut().initiate(expr.name.0.clone(), value)?;
             return Ok(Object::Null);
         }
         NodeType::ReassignStatement => {
@@ -177,7 +177,7 @@ fn apply_function<'a>(function: Object<'a>, args: Vec<Object<'a>>) -> Result<Obj
             )))
         }
     };
-    let extended_env = extend_fn_env(&func, args);
+    let extended_env = extend_fn_env(&func, args)?;
     let evaluated = eval_statements(&func.body.statements, Rc::clone(&extended_env))?;
     return unwrap_return(evaluated);
 }
@@ -185,15 +185,16 @@ fn apply_function<'a>(function: Object<'a>, args: Vec<Object<'a>>) -> Result<Obj
 fn extend_fn_env<'a>(
     function: &Function<'a>,
     args: Vec<Object<'a>>,
-) -> Rc<RefCell<Environment<'a>>> {
+) -> Result<Rc<RefCell<Environment<'a>>>, EvalErr> {
     let env = Rc::new(RefCell::new(Environment::new_with_outer(Rc::clone(
         &function.env,
     ))));
     for (idx, param) in function.params.iter().enumerate() {
-        env.borrow_mut().set(param.0.clone(), args[idx].clone());
+        env.borrow_mut()
+            .initiate(param.0.clone(), args[idx].clone())?;
     }
 
-    return env;
+    return Ok(env);
 }
 
 fn unwrap_return<'a>(value: Object<'a>) -> Result<Object<'a>, EvalErr> {

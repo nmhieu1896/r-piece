@@ -23,7 +23,6 @@ pub enum NodeType {
 }
 
 pub trait NodeTrait: Debug {
-    #[allow(unused)]
     fn token_literal(&self) -> String;
     fn to_str(&self) -> String;
     fn node_type(&self) -> NodeType;
@@ -180,7 +179,6 @@ impl NodeTrait for Expression {
     }
 }
 
-#[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum Statement {
     Let(LetStatement),
@@ -188,6 +186,7 @@ pub enum Statement {
     Return(ReturnStatement),
     Expression(ExpressionStatement),
     Program(Program),
+    #[allow(unused)]
     Block(BlockStatement),
 }
 impl Statement {
@@ -386,9 +385,7 @@ impl NodeTrait for ExpressionStatement {
     fn node_type(&self) -> NodeType {
         NodeType::ExpressionStatement
     }
-    // fn as_any(&self) -> &dyn std::any::Any {
-    //     self
-    // }
+
     fn token_literal(&self) -> String {
         self.token.literal()
     }
@@ -548,9 +545,7 @@ impl NodeTrait for PrefixExpression {
     fn node_type(&self) -> NodeType {
         NodeType::PrefixExpression
     }
-    // fn as_any(&self) -> &dyn std::any::Any {
-    //     self
-    // }
+
     fn to_str(&self) -> String {
         let mut str = String::from("(");
         str.push_str(&self.token.literal());

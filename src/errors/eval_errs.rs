@@ -33,6 +33,10 @@ pub enum EvalErr {
     Order(String, String),
     #[error("Cannot equally compare {0} and {1}")]
     Equal(String, String),
+
+    //
+    #[error("Variable {0} is already initialized")]
+    AlreadyInitialized(String),
 }
 
 impl EvalErr {

@@ -162,7 +162,7 @@ mod tests {
                 Object::Number(10),
             ),
             (
-                "let a = 5; fn(newA) {a = newA}(100), a",
+                "let a = 5; fn(newA) {a = newA}(100); a",
                 Object::Number(100),
             ),
         ];
@@ -171,8 +171,11 @@ mod tests {
             assert_eq!(obj, expected);
         }
 
-        let obj = test_eval("b = 1");
-        assert!(obj.is_err());
+        let test = vec!["b = 1", "let a = 5; let a = 10", "let a = 5; b = 10"];
+        for input in test.into_iter() {
+            let obj = test_eval(input);
+            assert!(obj.is_err());
+        }
     }
 
     #[test]

@@ -23,12 +23,12 @@ impl<'a> Environment<'a> {
         }
     }
 
-    pub fn set(&mut self, key: String, value: Object<'a>) -> Object<'a> {
-        self.store
-            .entry(key)
-            .and_modify(|x| *x = value.clone())
-            .or_insert(value.clone());
-        return value;
+    pub fn initiate(&mut self, key: String, value: Object<'a>) -> Result<Object<'a>, EvalErr> {
+        if self.store.contains_key(&key) {
+            return Err(EvalErr::AlreadyInitialized(key));
+        }
+        self.store.insert(key, value.clone());
+        return Ok(value);
     }
 
     // Recursively searches for the key in the "parent" environment
