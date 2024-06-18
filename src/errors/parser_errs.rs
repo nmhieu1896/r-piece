@@ -39,33 +39,35 @@ pub enum ParseErr {
     #[error("To Statement Error: Expected: Statement | got {0:?}")]
     ToStatement(String),
     // Parse Expression
-    #[error("To Ident Error: Expected: {0} | got {1:?}")]
-    ToIdent(String, String),
-    #[error("To Number Error: Expected: {0} | got {1:?}")]
-    ToNum(String, String),
-    #[error("To Bool Error: Expected: {0} | got {1:?}")]
-    ToBool(String, String),
-    #[error("To Prefix Error: Expected: {0} | got {1:?}")]
-    ToPrefix(String, String),
-    #[error("To Infix Error: Expected: {0} | got {1:?}")]
-    ToInfix(String, String),
-    #[error("To Call Error: Expected: {0} | got {1:?}")]
-    ToCall(String, String),
-    #[error("To If Error: Expected: {0} | got {1:?}")]
-    ToIf(String, String),
-    #[error("To Function Error: Expected: {0} | got {1:?}")]
-    ToFunction(String, String),
+    #[error("To Ident Error: got {0:?}")]
+    ToIdent(String),
+    #[error("To String Error: got {0:?}")]
+    ToString(String),
+    #[error("To Number Error: got {0:?}")]
+    ToNum(String),
+    #[error("To Bool Error: got {0:?}")]
+    ToBool(String),
+    #[error("To Prefix Error: got {0:?}")]
+    ToPrefix(String),
+    #[error("To Infix Error: got {0:?}")]
+    ToInfix(String),
+    #[error("To Call Error: got {0:?}")]
+    ToCall(String),
+    #[error("To If Error: got {0:?}")]
+    ToIf(String),
+    #[error("To Function Error: got {0:?}")]
+    ToFunction(String),
     // Parse Statement
-    #[error("To Let Error: Expected: {0} | got {1:?}")]
-    ToLet(String, String),
-    #[error("To Return Error: Expected: {0} | got {1:?}")]
-    ToReturn(String, String),
-    #[error("To Expression Error: Expected: {0} | got {1:?}")]
-    ToExpStmt(String, String),
-    #[error("To Program Error: Expected: {0} | got {1:?}")]
-    ToProgram(String, String),
-    #[error("To Block Error: Expected: {0} | got {1:?}")]
-    ToBlock(String, String),
+    #[error("To Let Error: got {0:?}")]
+    ToLet(String),
+    #[error("To Return Error: got {0:?}")]
+    ToReturn(String),
+    #[error("To Expression Error: got {0:?}")]
+    ToExpStmt(String),
+    #[error("To Program Error: got {0:?}")]
+    ToProgram(String),
+    #[error("To Block Error: got {0:?}")]
+    ToBlock(String),
 }
 
 impl ParseErr {

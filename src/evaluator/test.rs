@@ -184,7 +184,13 @@ mod tests {
             println!("{:?}", obj);
             match obj {
                 Object::Function(f) => {
-                    assert_eq!(f.params, args);
+                    assert_eq!(
+                        f.params
+                            .iter()
+                            .map(|x| x.0.clone())
+                            .collect::<Vec<String>>(),
+                        args
+                    );
                     assert_eq!(f.body.to_str(), expected);
                 }
                 anything => panic!("{:?}", anything),

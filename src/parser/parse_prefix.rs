@@ -1,5 +1,7 @@
 use crate::{
-    ast::ast::{BlockStatement, Expression, FunctionLiteral, IfExpression, PrefixExpression},
+    ast::ast::{
+        BlockStatement, Expression, FunctionLiteral, Identifier, IfExpression, PrefixExpression,
+    },
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
 };
@@ -11,7 +13,13 @@ use super::{
 };
 
 pub fn parse_identifier<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {
-    Ok(Expression::Identifier(parser.cur_token.literal()))
+    Ok(Expression::Identifier(Identifier(
+        parser.cur_token.literal(),
+    )))
+}
+
+pub fn parse_string<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {
+    Ok(Expression::String(parser.cur_token.literal()))
 }
 
 pub fn parse_int_literal<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {
@@ -82,13 +90,13 @@ pub fn parse_function_literal<'a>(parser: &mut Parser<'a>) -> Result<Expression,
 }
 
 // when calling this, current token must be "(" or LPAREN
-pub fn parse_fn_parameters<'a>(parser: &mut Parser<'a>) -> Result<Vec<String>, ParseErr> {
+pub fn parse_fn_parameters<'a>(parser: &mut Parser<'a>) -> Result<Vec<Identifier>, ParseErr> {
     let mut identifiers = Vec::new();
     parser.next_token(); // move on from '(',
     while !parser.cur_token.is_same_with(TOKEN::RPAREN) {
         match parser.cur_token {
             TOKEN::IDENT(ref name) => {
-                identifiers.push(name.clone());
+                identifiers.push(Identifier(name.0.clone()));
                 parser.next_token()
             }
             _ => {

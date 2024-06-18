@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::ast::ast::Identifier;
+
 use super::token::TOKEN;
 use std::{iter::Peekable, str::Chars};
 
@@ -96,7 +98,7 @@ impl<'a> Lexer<'a> {
         if self.keywords.contains_key(identifier.as_str()) {
             return self.keywords.get(identifier.as_str()).unwrap().clone();
         }
-        return TOKEN::IDENT(identifier);
+        return TOKEN::IDENT(Identifier(identifier));
     }
 
     pub fn read_number(&mut self) -> i64 {

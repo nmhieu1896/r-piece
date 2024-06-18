@@ -18,6 +18,19 @@ pub enum EvalErr {
     IdentifierNotFound(String),
     #[error("{0}")]
     ParseErr(#[from] ParseErr),
+
+    #[error("Cannot add {0} and {1}")]
+    PlusError(String, String),
+    #[error("Cannot subtract {0} and {1}")]
+    SubstractError(String, String),
+    #[error("Cannot multiply {0} and {1}")]
+    MultiplyError(String, String),
+    #[error("Cannot divide {0} and {1}")]
+    DivideError(String, String),
+    #[error("Cannot orderly compare {0} and {1}")]
+    Order(String, String),
+    #[error("Cannot equally compare {0} and {1}")]
+    Equal(String, String),
 }
 
 impl EvalErr {

@@ -75,9 +75,9 @@ impl TOKEN {
             TOKEN::FUNCTION => String::from("fn"),
             //
             TOKEN::ILLEGAL(c) => String::from(*c),
-            TOKEN::IDENT(s) => s.clone(),
+            TOKEN::IDENT(s) => s.0.clone(),
             TOKEN::NUMBER(n) => n.to_string(),
-            TOKEN::STRING(n) => n.to_string(),
+            TOKEN::STRING(s) => s.clone(),
         }
     }
     pub fn to_type_name(&self) -> String {

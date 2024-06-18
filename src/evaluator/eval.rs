@@ -8,6 +8,7 @@ use crate::{
 
 use super::{
     environment::Environment,
+    eval_infix::eval_infix_expression,
     object::{Function, Object},
 };
 
@@ -60,7 +61,7 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::LetStatement => {
             let expr = node.to_statement()?.to_let()?;
             let value = eval(Node::Expression(expr.value), Rc::clone(&env))?;
-            env.borrow_mut().set(expr.name.clone(), value);
+            env.borrow_mut().set(expr.name.0.clone(), value);
             return Ok(Object::Null);
         }
         NodeType::FunctionLiteral => {
@@ -82,10 +83,11 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::Identifier => {
             let key = node.to_expression()?.to_ident()?;
             let borrow_env = env.borrow();
-            let value = borrow_env.get(&key)?;
+            let value = borrow_env.get(&key.0)?;
 
             return Ok(value.clone());
         }
+        NodeType::String => return Ok(Object::String(node.to_expression()?.to_string_value()?)),
         NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),
         NodeType::Bool => return Ok(Object::Boolean(node.to_expression()?.to_bool()?)),
     }
@@ -124,6 +126,7 @@ fn is_truthy(value: Object) -> bool {
     match value {
         Object::Boolean(b) => b,
         Object::Null => false,
+        Object::String(s) => s.len() > 0,
         Object::Number(n) => n != 0,
         _ => true,
     }
@@ -131,58 +134,6 @@ fn is_truthy(value: Object) -> bool {
 
 fn eval_bang_expression(value: Object) -> Object {
     Object::Boolean(!is_truthy(value))
-}
-fn eval_eq_expression<'a>(
-    operator: TOKEN,
-    left: Object<'a>,
-    right: Object<'a>,
-) -> Result<Object<'a>, EvalErr> {
-    match left {
-        Object::Number(n) if operator == TOKEN::EQ => Ok(Object::Boolean(n == right.as_int()?)),
-        Object::Number(n) if operator == TOKEN::NotEQ => Ok(Object::Boolean(n != right.as_int()?)),
-        Object::Boolean(b) if operator == TOKEN::EQ => Ok(Object::Boolean(b == right.as_bool()?)),
-        Object::Boolean(b) if operator == TOKEN::NotEQ => {
-            Ok(Object::Boolean(b != right.as_bool()?))
-        }
-        _ => Err(EvalErr::NotImplemented(format!(
-            "{:?} cant be compared",
-            left
-        ))),
-    }
-}
-
-fn eval_infix_expression<'a>(
-    operator: TOKEN,
-    left: Object<'a>,
-    right: Object<'a>,
-) -> Result<Object<'a>, EvalErr> {
-    match operator {
-        TOKEN::PLUS => Ok(Object::Number(
-            left.as_int_with(TOKEN::PLUS)? + right.as_int_with(TOKEN::PLUS)?,
-        )),
-        TOKEN::MINUS => Ok(Object::Number(
-            left.as_int_with(TOKEN::MINUS)? - right.as_int_with(TOKEN::MINUS)?,
-        )),
-        TOKEN::ASTERISK => Ok(Object::Number(
-            left.as_int_with(TOKEN::ASTERISK)? * right.as_int_with(TOKEN::ASTERISK)?,
-        )),
-        TOKEN::SLASH if right.as_int_with(TOKEN::SLASH)? == 0 => Err(EvalErr::DivideByZero),
-        TOKEN::SLASH => Ok(Object::Number(
-            left.as_int_with(TOKEN::SLASH)? / right.as_int_with(TOKEN::SLASH)?,
-        )),
-        TOKEN::GT => Ok(Object::Boolean(
-            left.as_int_with(TOKEN::GT)? > right.as_int_with(TOKEN::GT)?,
-        )),
-        TOKEN::LT => Ok(Object::Boolean(
-            left.as_int_with(TOKEN::LT)? < right.as_int_with(TOKEN::LT)?,
-        )),
-        TOKEN::EQ => eval_eq_expression(operator, left, right),
-        TOKEN::NotEQ => eval_eq_expression(operator, left, right),
-        _ => Err(EvalErr::NotImplemented(format!(
-            "{:?} is not implemented for infix expression",
-            operator
-        ))),
-    }
 }
 
 fn eval_if_expression<'a>(
@@ -233,7 +184,7 @@ fn extend_fn_env<'a>(
         &function.env,
     ))));
     for (idx, param) in function.params.iter().enumerate() {
-        env.borrow_mut().set(param.clone(), args[idx].clone());
+        env.borrow_mut().set(param.0.clone(), args[idx].clone());
     }
 
     return env;

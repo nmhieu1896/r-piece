@@ -16,6 +16,7 @@ pub enum NodeType {
     CallExpression,
     //
     Identifier,
+    String,
     Number,
     Bool,
 }
@@ -71,6 +72,7 @@ impl NodeTrait for Node {
 #[derive(Debug, Clone)]
 pub enum Expression {
     Identifier(Identifier),
+    String(String),
     Number(Number),
     Bool(bool),
     Prefix(Box<PrefixExpression>),
@@ -83,73 +85,55 @@ impl Expression {
     pub fn to_ident(&self) -> Result<Identifier, ParseErr> {
         match self {
             Expression::Identifier(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToIdent(
-                "Indentifier".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToIdent(anything.token_literal())),
+        }
+    }
+    pub fn to_string_value(&self) -> Result<String, ParseErr> {
+        match self {
+            Expression::String(x) => Ok(x.clone()),
+            anything => Err(ParseErr::ToString(anything.token_literal())),
         }
     }
     pub fn to_num(&self) -> Result<Number, ParseErr> {
         match self {
             Expression::Number(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToNum(
-                "Number".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToNum(anything.token_literal())),
         }
     }
     pub fn to_bool(&self) -> Result<bool, ParseErr> {
         match self {
             Expression::Bool(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToBool(
-                "Bool".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToBool(anything.token_literal())),
         }
     }
     pub fn to_prefix(&self) -> Result<PrefixExpression, ParseErr> {
         match self {
             Expression::Prefix(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToPrefix(
-                "Prefix".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToPrefix(anything.token_literal())),
         }
     }
     pub fn to_infix(&self) -> Result<InfixExpression, ParseErr> {
         match self {
             Expression::Infix(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToInfix(
-                "Infix".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToInfix(anything.token_literal())),
         }
     }
     pub fn to_call(&self) -> Result<CallExpression, ParseErr> {
         match self {
             Expression::Call(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToCall(
-                "Call Expression".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToCall(anything.token_literal())),
         }
     }
     pub fn to_if(&self) -> Result<IfExpression, ParseErr> {
         match self {
             Expression::If(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToIf(
-                "If Expression".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToIf(anything.token_literal())),
         }
     }
     pub fn to_function(&self) -> Result<FunctionLiteral, ParseErr> {
         match self {
             Expression::Function(x) => Ok(x.as_ref().clone()),
-            anything => Err(ParseErr::ToFunction(
-                "Function Literal".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToFunction(anything.token_literal())),
         }
     }
 }
@@ -157,6 +141,7 @@ impl NodeTrait for Expression {
     fn node_type(&self) -> NodeType {
         match self {
             Expression::Identifier(_) => NodeType::Identifier,
+            Expression::String(_) => NodeType::String,
             Expression::Number(_) => NodeType::Number,
             Expression::Bool(_) => NodeType::Bool,
             Expression::Prefix(_) => NodeType::PrefixExpression,
@@ -169,6 +154,7 @@ impl NodeTrait for Expression {
     fn token_literal(&self) -> String {
         match self {
             Expression::Identifier(x) => x.token_literal(),
+            Expression::String(x) => x.token_literal(),
             Expression::Number(x) => x.token_literal(),
             Expression::Bool(x) => x.token_literal(),
             Expression::Prefix(x) => x.token_literal(),
@@ -181,6 +167,7 @@ impl NodeTrait for Expression {
     fn to_str(&self) -> String {
         match self {
             Expression::Identifier(x) => x.to_str(),
+            Expression::String(x) => x.to_str(),
             Expression::Number(x) => x.to_str(),
             Expression::Bool(x) => x.to_str(),
             Expression::Prefix(x) => x.to_str(),
@@ -205,34 +192,31 @@ impl Statement {
     pub fn to_let(&self) -> Result<LetStatement, ParseErr> {
         match self {
             Statement::Let(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToLet("".to_string(), x.token_literal())),
+            x => Err(ParseErr::ToLet(x.token_literal())),
         }
     }
     pub fn to_return(&self) -> Result<ReturnStatement, ParseErr> {
         match self {
             Statement::Return(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToReturn("".to_string(), x.token_literal())),
+            x => Err(ParseErr::ToReturn(x.token_literal())),
         }
     }
     pub fn to_exp_stmt(&self) -> Result<ExpressionStatement, ParseErr> {
         match self {
             Statement::Expression(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToExpStmt("".to_string(), x.token_literal())),
+            x => Err(ParseErr::ToExpStmt(x.token_literal())),
         }
     }
     pub fn to_program(&self) -> Result<Program, ParseErr> {
         match self {
             Statement::Program(x) => Ok(x.clone()),
-            x => Err(ParseErr::ToProgram("".to_string(), x.token_literal())),
+            x => Err(ParseErr::ToProgram(x.token_literal())),
         }
     }
     pub fn to_block(&self) -> Result<BlockStatement, ParseErr> {
         match self {
             Statement::Block(x) => Ok(x.clone()),
-            anything => Err(ParseErr::ToBlock(
-                "Block".to_string(),
-                anything.token_literal(),
-            )),
+            anything => Err(ParseErr::ToBlock(anything.token_literal())),
         }
     }
 }
@@ -307,7 +291,7 @@ impl NodeTrait for LetStatement {
     }
     fn to_str(&self) -> String {
         let mut str = String::from("let ");
-        str.push_str(&self.name.clone());
+        str.push_str(&self.name.0.clone());
         str.push_str(" = ");
         str.push_str(&self.value.to_str());
         str.push_str(";");
@@ -416,16 +400,29 @@ impl NodeTrait for BlockStatement {
 }
 
 // -------------- EXPRESSION TYPE ----------------------
-//PRIMITIVE String
-pub type Identifier = String;
+//PRIMITIVE
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Identifier(pub String);
 impl NodeTrait for Identifier {
     fn node_type(&self) -> NodeType {
         NodeType::Identifier
     }
     fn to_str(&self) -> String {
-        self.clone()
+        self.0.clone()
     }
-    fn token_literal(&self) -> Identifier {
+    fn token_literal(&self) -> String {
+        self.0.clone()
+    }
+}
+// PRIMITIVE string
+impl NodeTrait for String {
+    fn node_type(&self) -> NodeType {
+        NodeType::String
+    }
+    fn to_str(&self) -> String {
+        format!("\"{}\"", self.clone())
+    }
+    fn token_literal(&self) -> String {
         self.clone()
     }
 }
@@ -483,7 +480,7 @@ impl NodeTrait for FunctionLiteral {
         let vec = self
             .parameters
             .iter()
-            .map(|x| x.to_string())
+            .map(|x| x.0.to_string())
             .collect::<Vec<String>>();
         str.push_str(&vec.join(", "));
         str.push_str(") {");

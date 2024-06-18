@@ -32,7 +32,7 @@ mod tests {
             let p = program.unwrap();
             let let_stmt = p.statements[0].to_let().unwrap();
             assert_eq!(let_stmt.token_literal(), keyword.to_string());
-            assert_eq!(let_stmt.name.clone(), ident.to_string());
+            assert_eq!(let_stmt.name.0, ident.to_string());
             assert_eq!(let_stmt.value.to_str(), val.to_string());
         }
         for &(input, keyword, val) in return_inputs.iter() {
@@ -69,7 +69,7 @@ mod tests {
         let exp = p.statements[0].to_exp_stmt().unwrap();
         assert_eq!(exp.token_literal(), "foobar".to_string());
         assert_eq!(exp.to_str(), "foobar".to_string());
-        assert_eq!(exp.expression.unwrap().to_ident().unwrap(), "foobar");
+        assert_eq!(exp.expression.unwrap().to_ident().unwrap().0, "foobar");
     }
 
     #[test]
@@ -192,6 +192,7 @@ mod tests {
             ("2 / (5 + 5)", "(2 / (5 + 5))"),
             ("-(5 + 5)", "(-(5 + 5))"),
             ("!(true == true)", "(!(true == true))"),
+            ("!(\"true\" == \"true\")", "(!(\"true\" == \"true\"))"),
         ];
 
         for &(input, expected) in tests.iter() {
@@ -213,6 +214,7 @@ mod tests {
         let input = r#"
         if (x < y) { 
             let x = 1;
+            let y = "2";
             return x;
         } else {
            let y = 1;
@@ -232,14 +234,17 @@ mod tests {
         let exp = program.unwrap().statements[0].to_exp_stmt().unwrap();
         let if_exp = exp.expression.unwrap().to_if().unwrap();
         assert_eq!(if_exp.condition.to_str(), "(x < y)");
-        assert_eq!(if_exp.consequence.to_str(), "{let x = 1; return x;}");
+        assert_eq!(
+            if_exp.consequence.to_str(),
+            "{let x = 1; let y = \"2\"; return x;}"
+        );
         assert_eq!(
             if_exp.alternative.clone().unwrap().to_str(),
             "{let y = 1; return y;}"
         );
         assert_eq!(
             if_exp.to_str(),
-            "if (x < y) {let x = 1; return x;} else {let y = 1; return y;}"
+            "if (x < y) {let x = 1; let y = \"2\"; return x;} else {let y = 1; return y;}"
         );
     }
 
@@ -266,7 +271,14 @@ mod tests {
             let exp = p.statements[0].to_exp_stmt().unwrap();
             let fn_exp = exp.expression.unwrap().to_function().unwrap();
             assert_eq!(fn_exp.body.to_str(), block_expect);
-            assert_eq!(&fn_exp.parameters, parameters);
+            assert_eq!(
+                &fn_exp
+                    .parameters
+                    .iter()
+                    .map(|x| x.0.clone())
+                    .collect::<Vec<String>>(),
+                parameters
+            );
         }
     }
 

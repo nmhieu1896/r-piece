@@ -1,5 +1,5 @@
 use crate::{
-    ast::ast::{Expression, Program},
+    ast::ast::{Expression, Identifier, Program},
     errors::parser_errs::ParseErr,
     lexer::{lexer::Lexer, token::TOKEN},
 };
@@ -10,7 +10,7 @@ use super::{
     parse_infix::{parse_call_expression, parse_infix_expression},
     parse_prefix::{
         parse_boolean_literal, parse_function_literal, parse_group_expression, parse_identifier,
-        parse_if_expression, parse_int_literal, parse_prefix_expression,
+        parse_if_expression, parse_int_literal, parse_prefix_expression, parse_string,
     },
     parse_statement::parse_statement,
 };
@@ -69,7 +69,8 @@ impl<'a> Parser<'a> {
             infix_parse_fns: HashMap::new(),
         };
         // PREFIX PARSERS
-        p.register_prefix(TOKEN::IDENT("".into()), parse_identifier);
+        p.register_prefix(TOKEN::IDENT(Identifier("".into())), parse_identifier);
+        p.register_prefix(TOKEN::STRING("".into()), parse_string);
         p.register_prefix(TOKEN::NUMBER(0), parse_int_literal);
         p.register_prefix(TOKEN::TRUE, parse_boolean_literal);
         p.register_prefix(TOKEN::FALSE, parse_boolean_literal);

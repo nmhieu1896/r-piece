@@ -22,12 +22,15 @@ impl<'a> Environment<'a> {
             outer: Some(outer),
         }
     }
+
     pub fn set(&mut self, key: String, value: Object<'a>) {
         self.store
             .entry(key)
             .and_modify(|x| *x = value.clone())
             .or_insert(value.clone());
     }
+
+    // Recursively searches for the key in the "parent" environment
     pub fn get(&self, key: &str) -> Result<Object<'a>, EvalErr> {
         let res = self.store.get(key);
         if res.is_none() {
@@ -39,7 +42,4 @@ impl<'a> Environment<'a> {
         }
         return Ok(res.unwrap().clone());
     }
-    // pub fn get(&self, key: &str) -> Option<&Object<'a>> {
-    //     self.store.get(key)
-    // }
 }

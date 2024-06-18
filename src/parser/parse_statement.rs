@@ -1,5 +1,5 @@
 use crate::{
-    ast::ast::{ExpressionStatement, LetStatement, ReturnStatement, Statement},
+    ast::ast::{ExpressionStatement, Identifier, LetStatement, ReturnStatement, Statement},
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
 };
@@ -18,7 +18,10 @@ pub fn parse_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseEr
 }
 
 pub fn parse_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseErr> {
-    if !parser.peek_token.is_same_with(TOKEN::IDENT(String::new())) {
+    if !parser
+        .peek_token
+        .is_same_with(TOKEN::IDENT(Identifier(String::new())))
+    {
         return Err(ParseErr::LET("IDENT".into(), parser.peek_token.clone()));
     }
     parser.next_token(); // to ident token
@@ -35,7 +38,7 @@ pub fn parse_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, Par
         parser.next_token();
     }
 
-    let stmt = LetStatement::new(name, value);
+    let stmt = LetStatement::new(Identifier(name), value);
 
     return Ok(Statement::Let(stmt));
 }

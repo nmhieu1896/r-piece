@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::lexer::{lexer::Lexer, token::TOKEN};
+    use crate::{
+        ast::ast::Identifier,
+        lexer::{lexer::Lexer, token::TOKEN},
+    };
 
     #[test]
     fn test() {
@@ -30,39 +33,39 @@ mod tests {
 
         let tokens = vec![
             TOKEN::LET,
-            TOKEN::IDENT("five".to_string()),
+            TOKEN::IDENT(Identifier("five".to_string())),
             TOKEN::ASSIGN,
             TOKEN::NUMBER(5),
             TOKEN::SEMICOLON,
             TOKEN::LET,
-            TOKEN::IDENT("ten".to_string()),
+            TOKEN::IDENT(Identifier("ten".to_string())),
             TOKEN::ASSIGN,
             TOKEN::NUMBER(10),
             TOKEN::SEMICOLON,
             TOKEN::LET,
-            TOKEN::IDENT("add".to_string()),
+            TOKEN::IDENT(Identifier("add".to_string())),
             TOKEN::ASSIGN,
             TOKEN::FUNCTION,
             TOKEN::LPAREN,
-            TOKEN::IDENT("x".to_string()),
+            TOKEN::IDENT(Identifier("x".to_string())),
             TOKEN::COMMA,
-            TOKEN::IDENT("y".to_string()),
+            TOKEN::IDENT(Identifier("y".to_string())),
             TOKEN::RPAREN,
             TOKEN::LBRACE,
-            TOKEN::IDENT("x".to_string()),
+            TOKEN::IDENT(Identifier("x".to_string())),
             TOKEN::PLUS,
-            TOKEN::IDENT("y".to_string()),
+            TOKEN::IDENT(Identifier("y".to_string())),
             TOKEN::SEMICOLON,
             TOKEN::RBRACE,
             TOKEN::SEMICOLON,
             TOKEN::LET,
-            TOKEN::IDENT("result".to_string()),
+            TOKEN::IDENT(Identifier("result".to_string())),
             TOKEN::ASSIGN,
-            TOKEN::IDENT("add".to_string()),
+            TOKEN::IDENT(Identifier("add".to_string())),
             TOKEN::LPAREN,
-            TOKEN::IDENT("five".to_string()),
+            TOKEN::IDENT(Identifier("five".to_string())),
             TOKEN::COMMA,
-            TOKEN::IDENT("ten".to_string()),
+            TOKEN::IDENT(Identifier("ten".to_string())),
             TOKEN::RPAREN,
             TOKEN::SEMICOLON,
             TOKEN::BANG,
