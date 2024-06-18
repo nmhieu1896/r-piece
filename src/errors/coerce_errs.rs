@@ -33,6 +33,8 @@ pub enum CoerceErr {
     // Parse Statement
     #[error("To Let Error: got {0:?}")]
     ToLet(String),
+    #[error("To Reassign Error: got {0:?}")]
+    ToReassign(String),
     #[error("To Return Error: got {0:?}")]
     ToReturn(String),
     #[error("To Expression Error: got {0:?}")]

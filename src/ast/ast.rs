@@ -6,6 +6,7 @@ use crate::{errors::coerce_errs::CoerceErr, lexer::token::TOKEN};
 pub enum NodeType {
     Program,
     LetStatement,
+    ReassignStatement,
     ReturnStatement,
     ExpressionStatement,
     BlockStatement,
@@ -183,6 +184,7 @@ impl NodeTrait for Expression {
 #[derive(Debug, Clone)]
 pub enum Statement {
     Let(LetStatement),
+    Reassign(ReassignStatement),
     Return(ReturnStatement),
     Expression(ExpressionStatement),
     Program(Program),
@@ -193,6 +195,12 @@ impl Statement {
         match self {
             Statement::Let(x) => Ok(x.clone()),
             x => Err(CoerceErr::ToLet(x.token_literal())),
+        }
+    }
+    pub fn to_reassign(&self) -> Result<ReassignStatement, CoerceErr> {
+        match self {
+            Statement::Reassign(x) => Ok(x.clone()),
+            x => Err(CoerceErr::ToReassign(x.token_literal())),
         }
     }
     pub fn to_return(&self) -> Result<ReturnStatement, CoerceErr> {
@@ -228,6 +236,7 @@ impl NodeTrait for Statement {
             Statement::Expression(_) => NodeType::ExpressionStatement,
             Statement::Program(_) => NodeType::Program,
             Statement::Block(_) => NodeType::BlockStatement,
+            Statement::Reassign(_) => NodeType::ReassignStatement,
         }
     }
     fn token_literal(&self) -> String {
@@ -237,6 +246,7 @@ impl NodeTrait for Statement {
             Statement::Expression(x) => x.token_literal(),
             Statement::Program(x) => x.token_literal(),
             Statement::Block(x) => x.token_literal(),
+            Statement::Reassign(x) => x.token_literal(),
         }
     }
     fn to_str(&self) -> String {
@@ -246,6 +256,7 @@ impl NodeTrait for Statement {
             Statement::Expression(x) => x.to_str(),
             Statement::Program(x) => x.to_str(),
             Statement::Block(x) => x.to_str(),
+            Statement::Reassign(x) => x.to_str(),
         }
     }
 }
@@ -285,6 +296,34 @@ impl LetStatement {
 impl NodeTrait for LetStatement {
     fn node_type(&self) -> NodeType {
         NodeType::LetStatement
+    }
+    fn token_literal(&self) -> String {
+        return "let".to_string();
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("let ");
+        str.push_str(&self.name.0.clone());
+        str.push_str(" = ");
+        str.push_str(&self.value.to_str());
+        str.push_str(";");
+
+        return str;
+    }
+}
+#[derive(Debug, Clone)]
+pub struct ReassignStatement {
+    pub name: Identifier, // if name is IDENT(string) => Some(String) else None
+    pub value: Expression,
+}
+impl ReassignStatement {
+    pub fn new(name: Identifier, value: Expression) -> Self {
+        Self { name, value }
+    }
+}
+
+impl NodeTrait for ReassignStatement {
+    fn node_type(&self) -> NodeType {
+        NodeType::ReassignStatement
     }
     fn token_literal(&self) -> String {
         return "let".to_string();

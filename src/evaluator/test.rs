@@ -154,11 +154,25 @@ mod tests {
                 "let a = 5; let b = !a; let c = !b; c",
                 Object::Boolean(true),
             ),
+            //Re assign
+            ("let a = 5; a = 10; a", Object::Number(10)),
+            ("let a = 5; a = 10; let b = a; b", Object::Number(10)),
+            (
+                "let a = 5; a = 10; let b = a; let c = b; c",
+                Object::Number(10),
+            ),
+            (
+                "let a = 5; a = 10; let b = a; let c = b; let d = c * 2; d",
+                Object::Number(20),
+            ),
         ];
         for (input, expected) in test.into_iter() {
             let obj = test_eval(input).unwrap();
             assert_eq!(obj, expected);
         }
+
+        let obj = test_eval("b = 1");
+        assert!(obj.is_err());
     }
 
     #[test]

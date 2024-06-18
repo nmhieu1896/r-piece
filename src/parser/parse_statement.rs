@@ -1,5 +1,8 @@
 use crate::{
-    ast::ast::{ExpressionStatement, Identifier, LetStatement, ReturnStatement, Statement},
+    ast::ast::{
+        ExpressionStatement, Identifier, LetStatement, ReassignStatement, ReturnStatement,
+        Statement,
+    },
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
 };
@@ -11,8 +14,9 @@ use super::{
 
 pub fn parse_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseErr> {
     match parser.cur_token {
-        TOKEN::LET => Ok(parse_let_statement(parser)?),
-        TOKEN::RETURN => Ok(parse_return_statement(parser)?),
+        TOKEN::LET => parse_let_statement(parser),
+        TOKEN::RETURN => parse_return_statement(parser),
+        TOKEN::IDENT(_) if parser.peek_token == TOKEN::ASSIGN => parse_reassign_statement(parser),
         _ => Ok(parse_expression_statement(parser)?),
     }
 }
@@ -41,6 +45,16 @@ pub fn parse_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, Par
     let stmt = LetStatement::new(Identifier(name), value);
 
     return Ok(Statement::Let(stmt));
+}
+
+pub fn parse_reassign_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseErr> {
+    let name = parser.cur_token.literal();
+    //Dont need to check error because match case in parse_statement've already done it
+    parser.next_token(); //to assign token
+    parser.next_token(); //to expression
+    let value = parse_expression(parser, Precedence::LOWEST)?;
+    let stmt = ReassignStatement::new(Identifier(name), value);
+    return Ok(Statement::Reassign(stmt));
 }
 
 pub fn parse_return_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseErr> {
