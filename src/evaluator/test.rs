@@ -162,8 +162,8 @@ mod tests {
                 Object::Number(10),
             ),
             (
-                "let a = 5; a = 10; let b = a; let c = b; let d = c * 2; d",
-                Object::Number(20),
+                "let a = 5; fn(newA) {a = newA}(100), a",
+                Object::Number(100),
             ),
         ];
         for (input, expected) in test.into_iter() {

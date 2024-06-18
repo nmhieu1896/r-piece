@@ -23,11 +23,12 @@ impl<'a> Environment<'a> {
         }
     }
 
-    pub fn set(&mut self, key: String, value: Object<'a>) {
+    pub fn set(&mut self, key: String, value: Object<'a>) -> Object<'a> {
         self.store
             .entry(key)
             .and_modify(|x| *x = value.clone())
             .or_insert(value.clone());
+        return value;
     }
 
     // Recursively searches for the key in the "parent" environment
@@ -41,5 +42,23 @@ impl<'a> Environment<'a> {
             return Err(EvalErr::IdentifierNotFound(key.to_string()));
         }
         return Ok(res.unwrap().clone());
+    }
+
+    // Recursively reassigns
+    pub fn reassign(&mut self, key: &str, value: Object<'a>) -> Result<Object<'a>, EvalErr> {
+        let res = self.store.get(key);
+
+        if res.is_none() {
+            if let Some(outer) = &self.outer {
+                let val = outer.borrow_mut().reassign(key, value)?;
+                return Ok(val);
+            }
+            return Err(EvalErr::IdentifierNotFound(key.to_string()));
+        }
+
+        self.store
+            .entry(key.to_string())
+            .and_modify(|x| *x = value.clone());
+        return Ok(value);
     }
 }

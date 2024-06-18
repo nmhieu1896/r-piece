@@ -67,8 +67,7 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::ReassignStatement => {
             let expr = node.to_statement()?.to_reassign()?;
             let value = eval(Node::Expression(expr.value), Rc::clone(&env))?;
-            env.borrow().get(&expr.name.0)?; // This get is to check if the key is in the env
-            env.borrow_mut().set(expr.name.0.clone(), value);
+            env.borrow_mut().reassign(&expr.name.0, value)?;
             return Ok(Object::Null);
         }
         NodeType::FunctionLiteral => {
