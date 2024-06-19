@@ -373,11 +373,8 @@ pub struct ExpressionStatement {
     pub expression: Option<Expression>,
 }
 impl ExpressionStatement {
-    pub fn new(token: TOKEN) -> Self {
-        Self {
-            token,
-            expression: None,
-        }
+    pub fn new(token: TOKEN, expression: Option<Expression>) -> Self {
+        Self { token, expression }
     }
 }
 

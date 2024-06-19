@@ -96,6 +96,36 @@ mod tests {
             ("if (1 > 2) { 10 }", Object::Null),
             ("if (1 > 2) { 10 } else { 20 }", Object::Number(20)),
             ("if (1 < 2) { 10 } else { 20 }", Object::Number(10)),
+            (
+                "if (1 > 2) { 10 } else if (2 > 1) { 15 } else { 20 }",
+                Object::Number(15),
+            ),
+            (
+                "if (1 > 2) { 10 } else if (2 > 3) { 15 } else { 20 }",
+                Object::Number(20),
+            ),
+            (
+                r#"
+                if ( 10 == 2*4 ) { 
+                    "10 == 2*4"
+                } else if (10 == 2*5) { 
+                    "10 == 2*5"
+                } else { 
+                    "I dont know"
+                }"#,
+                Object::String("10 == 2*5".into()),
+            ),
+            (
+                r#"
+                if ( 10 == 2*4 ) { 
+                    "10 == 2*4"
+                } else if (10 < 2*5) { 
+                    "10 < 2*5"
+                } else { 
+                    "I dont know"
+                }"#,
+                Object::String("I dont know".into()),
+            ),
         ];
         for (input, expected) in test.into_iter() {
             let obj = test_eval(input).unwrap();

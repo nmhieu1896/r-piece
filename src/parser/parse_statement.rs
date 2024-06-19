@@ -70,7 +70,7 @@ pub fn parse_return_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, 
 }
 
 pub fn parse_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseErr> {
-    let mut stmt = ExpressionStatement::new(parser.cur_token.clone());
+    let mut stmt = ExpressionStatement::new(parser.cur_token.clone(), None);
     let expression = parse_expression(parser, Precedence::LOWEST);
     stmt.expression = parser.result_to_option(expression)?;
 

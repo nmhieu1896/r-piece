@@ -1,6 +1,7 @@
 use crate::{
     ast::ast::{
-        BlockStatement, Expression, FunctionLiteral, Identifier, IfExpression, PrefixExpression,
+        BlockStatement, Expression, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
+        PrefixExpression, Statement,
     },
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
@@ -54,7 +55,7 @@ pub fn parse_group_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression,
 }
 
 pub fn parse_if_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {
-    parser.next_token();
+    parser.next_token(); // move on from IF
     let condition = parse_expression(parser, Precedence::LOWEST)?;
     let mut expression = IfExpression::new(condition);
 
@@ -71,7 +72,11 @@ pub fn parse_if_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression, Pa
             parser.next_token(); // move on from ELSE
             Some(BlockStatement::new(parse_block_statement(parser)?))
         } else if parser.peek_token.is_same_with(TOKEN::IF) {
-            None
+            parser.next_token(); // move on from ELSE
+            let if_exp = parse_if_expression(parser)?;
+            let stmt_exp = ExpressionStatement::new(TOKEN::IF, Some(if_exp));
+            let block_stmt = BlockStatement::new(vec![Statement::Expression(stmt_exp)]);
+            Some(block_stmt)
         } else {
             let expect = "IF or LBRACE";
             return Err(ParseErr::ELSE(expect.into(), parser.peek_token.clone()));
