@@ -101,6 +101,9 @@ impl<'a> Lexer<'a> {
         let mut str = String::new();
         self.read_char();
         while self.ch != '"' {
+            if self.ch == '\0' {
+                panic!("EOF for string lexing");
+            }
             if self.ch == '\\' {
                 self.read_char();
             }

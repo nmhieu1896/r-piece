@@ -34,17 +34,20 @@ pub fn run_repl() {
         let mut p = Parser::new(l.clone());
 
         let program = p.parse_program();
-        match program {
-            Ok(p) => {
-                // println!("{:?}", stringnify_stmt(&p.statements));
-                let x = eval(Node::Statement(Statement::Program(p)), Rc::clone(&env));
-                if x.is_err() {
-                    println!("{:?}", x.unwrap_err().to_string());
-                } else {
-                    println!("{:?}", x.unwrap());
-                }
-            }
-            Err(e) => println!("{:?}", e),
+        if program.is_err() {
+            println!("{:?}", program.err().unwrap().to_string());
+            continue;
+        }
+
+        // println!("{:?}", stringnify_stmt(&p.statements));
+        let x = eval(
+            Node::Statement(Statement::Program(program.unwrap())),
+            Rc::clone(&env),
+        );
+        if x.is_err() {
+            println!("{:?}", x.unwrap_err().to_string());
+        } else {
+            println!("{:?}", x.unwrap());
         }
     }
 

@@ -13,6 +13,7 @@ pub enum Object<'a> {
     Number(i64),
     Identifier(Identifier),
     String(String),
+    Builtin(String), // get function from builtin
     Boolean(bool),
     Null,
     Return(Box<Object<'a>>),

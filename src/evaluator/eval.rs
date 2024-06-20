@@ -7,6 +7,7 @@ use crate::{
 };
 
 use super::{
+    builtin::BUILTINS,
     environment::Environment,
     eval_infix::eval_infix_expression,
     object::{Function, Object},
@@ -84,14 +85,20 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
 
             let args = eval_call_args(&expr.arguments, Rc::clone(&env))?;
             return apply_function(function, args);
-            // return Ok(Object::Call(Box::new(Call::new(function, args))));
         }
         NodeType::Identifier => {
             let key = node.to_expression()?.to_ident()?;
             let borrow_env = env.borrow();
-            let value = borrow_env.get(&key.0)?;
+            let value = borrow_env.get(&key.0);
+            if value.is_err() {
+                let func = BUILTINS.get(key.0.as_str());
+                if func.is_some() {
+                    return Ok(Object::Builtin(key.0.clone()));
+                }
+                return Err(EvalErr::IdentifierNotFound(key.0.clone()));
+            }
 
-            return Ok(value.clone());
+            return Ok(value.unwrap().clone());
         }
         NodeType::String => return Ok(Object::String(node.to_expression()?.to_string_value()?)),
         NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),
@@ -170,6 +177,9 @@ fn eval_call_args<'a>(
 fn apply_function<'a>(function: Object<'a>, args: Vec<Object<'a>>) -> Result<Object<'a>, EvalErr> {
     let func = match function {
         Object::Function(f) => f,
+        Object::Builtin(s) => {
+            return BUILTINS.get(s.as_str()).unwrap()(&args);
+        }
         _ => {
             return Err(EvalErr::NotImplemented(format!(
                 "{:?} is not a function",

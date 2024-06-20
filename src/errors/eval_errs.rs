@@ -37,6 +37,12 @@ pub enum EvalErr {
     //
     #[error("Variable {0} is already initialized")]
     AlreadyInitialized(String),
+
+    //builtin
+    #[error("len only takes one argument")]
+    LenArgsCount,
+    #[error("len only takes string and array")]
+    LenArgsType,
 }
 
 impl EvalErr {
