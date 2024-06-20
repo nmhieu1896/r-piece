@@ -1,6 +1,5 @@
-// use lazy_static::lazy_static;
-// use phf::phf_map;
-// use std::collections::HashMap;
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
 use std::mem::discriminant;
 
 use crate::ast::ast::{Identifier, Number};
@@ -120,26 +119,14 @@ impl TOKEN {
     }
 }
 
-// lazy_static! {
-//     pub static ref KEYWORDS: HashMap<String, TOKEN> = {
-//         let mut m = HashMap::new();
-//         m.insert("fn".to_string(), TOKEN::FUNCTION);
-//         m.insert("let".to_string(), TOKEN::LET);
-//         m.insert("true".to_string(), TOKEN::TRUE);
-//         m.insert("false".to_string(), TOKEN::FALSE);
-//         m.insert("if".to_string(), TOKEN::IF);
-//         m.insert("else".to_string(), TOKEN::ELSE);
-//         m.insert("return".to_string(), TOKEN::RETURN);
-//         m
-//     };
-// }
-
-// pub static KEYWORDS: phf::Map<&'static str, TOKEN> = phf_map! {
-//     "fn"=>TOKEN::FUNCTION,
-//     "let"=>TOKEN::LET,
-//     "true"=>TOKEN::TRUE,
-//     "false"=>TOKEN::FALSE,
-//     "if"=>TOKEN::IF,
-//     "else"=>TOKEN::ELSE,
-//     "return"=>TOKEN::RETURN,
-// };
+pub static KEYWORDS: Lazy<HashMap<&'static str, TOKEN>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("fn", TOKEN::FUNCTION);
+    m.insert("let", TOKEN::LET);
+    m.insert("true", TOKEN::TRUE);
+    m.insert("false", TOKEN::FALSE);
+    m.insert("if", TOKEN::IF);
+    m.insert("else", TOKEN::ELSE);
+    m.insert("return", TOKEN::RETURN);
+    m
+});

@@ -1,32 +1,19 @@
-use std::collections::HashMap;
-
 use crate::ast::ast::Identifier;
 
-use super::token::TOKEN;
+use super::token::{KEYWORDS, TOKEN};
 use std::{iter::Peekable, str::Chars};
 
 #[derive(Debug, Clone)]
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
     ch: char,
-    keywords: HashMap<String, TOKEN>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Lexer<'a> {
-        let mut m = HashMap::new();
-        m.insert("fn".to_string(), TOKEN::FUNCTION);
-        m.insert("let".to_string(), TOKEN::LET);
-        m.insert("true".to_string(), TOKEN::TRUE);
-        m.insert("false".to_string(), TOKEN::FALSE);
-        m.insert("if".to_string(), TOKEN::IF);
-        m.insert("else".to_string(), TOKEN::ELSE);
-        m.insert("return".to_string(), TOKEN::RETURN);
-
         let mut l = Lexer {
             input: input.chars().peekable(),
             ch: '\0',
-            keywords: m,
         };
         l.read_char();
         return l;
@@ -95,8 +82,8 @@ impl<'a> Lexer<'a> {
             self.read_char();
         }
 
-        if self.keywords.contains_key(identifier.as_str()) {
-            return self.keywords.get(identifier.as_str()).unwrap().clone();
+        if KEYWORDS.contains_key(identifier.as_str()) {
+            return KEYWORDS.get(identifier.as_str()).unwrap().clone();
         }
         return TOKEN::IDENT(Identifier(identifier));
     }

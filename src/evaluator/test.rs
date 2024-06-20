@@ -283,4 +283,17 @@ mod tests {
             assert_eq!(obj, expected);
         }
     }
+
+    #[test]
+    fn test_builtin_functions() {
+        let tests = vec![
+            (r#"len("")"#, Object::Number(0)),
+            (r#"len("hello")"#, Object::Number(5)),
+            (r#"len("hello world")"#, Object::Number(11)),
+        ];
+        for (input, expected) in tests.into_iter() {
+            let obj = test_eval(input).unwrap();
+            assert_eq!(obj, expected);
+        }
+    }
 }
