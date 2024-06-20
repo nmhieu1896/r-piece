@@ -30,10 +30,12 @@ pub enum TOKEN {
     //Delimeters
     COMMA,
     SEMICOLON,
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
+    LPAREN,   // (
+    RPAREN,   // )
+    LBRACE,   // {
+    RBRACE,   // }
+    LBRACKET, // [
+    RBRACKET, // ]
 
     // keywords
     FUNCTION,
@@ -64,6 +66,8 @@ impl TOKEN {
             TOKEN::RPAREN => String::from(")"),
             TOKEN::LBRACE => String::from("{"),
             TOKEN::RBRACE => String::from("}"),
+            TOKEN::LBRACKET => String::from("["),
+            TOKEN::RBRACKET => String::from("]"),
             TOKEN::EOF => String::from("EOF"),
             TOKEN::LET => String::from("LET"),
             TOKEN::RETURN => String::from("RETURN"),
@@ -97,6 +101,8 @@ impl TOKEN {
             TOKEN::RPAREN => String::from(")"),
             TOKEN::LBRACE => String::from("{"),
             TOKEN::RBRACE => String::from("}"),
+            TOKEN::LBRACKET => String::from("["),
+            TOKEN::RBRACKET => String::from("]"),
             TOKEN::EOF => String::from("EOF"),
             TOKEN::LET => String::from("LET"),
             TOKEN::RETURN => String::from("RETURN"),

@@ -20,6 +20,7 @@ pub enum NodeType {
     String,
     Number,
     Bool,
+    ArrayLiteral,
 }
 
 pub trait NodeTrait: Debug {
@@ -74,7 +75,8 @@ pub enum Expression {
     Identifier(Identifier),
     String(String),
     Number(Number),
-    Bool(bool),
+    Bool(Boolean),
+    ArrayLiteral(ArrayLiteral),
     Prefix(Box<PrefixExpression>),
     Infix(Box<InfixExpression>),
     If(Box<IfExpression>),
@@ -104,6 +106,12 @@ impl Expression {
         match self {
             Expression::Bool(x) => Ok(x.clone()),
             anything => Err(CoerceErr::ToBool(anything.token_literal())),
+        }
+    }
+    pub fn to_array_literal(&self) -> Result<ArrayLiteral, CoerceErr> {
+        match self {
+            Expression::ArrayLiteral(x) => Ok(x.clone()),
+            anything => Err(CoerceErr::ToArrayLiteral(anything.token_literal())),
         }
     }
     pub fn to_prefix(&self) -> Result<PrefixExpression, CoerceErr> {
@@ -144,6 +152,7 @@ impl NodeTrait for Expression {
             Expression::String(_) => NodeType::String,
             Expression::Number(_) => NodeType::Number,
             Expression::Bool(_) => NodeType::Bool,
+            Expression::ArrayLiteral(_) => NodeType::ArrayLiteral,
             Expression::Prefix(_) => NodeType::PrefixExpression,
             Expression::Infix(_) => NodeType::InfixExpression,
             Expression::If(_) => NodeType::IfExpression,
@@ -157,6 +166,7 @@ impl NodeTrait for Expression {
             Expression::String(x) => x.token_literal(),
             Expression::Number(x) => x.token_literal(),
             Expression::Bool(x) => x.token_literal(),
+            Expression::ArrayLiteral(x) => x.token_literal(),
             Expression::Prefix(x) => x.token_literal(),
             Expression::Infix(x) => x.token_literal(),
             Expression::If(x) => x.token_literal(),
@@ -170,6 +180,7 @@ impl NodeTrait for Expression {
             Expression::String(x) => x.to_str(),
             Expression::Number(x) => x.to_str(),
             Expression::Bool(x) => x.to_str(),
+            Expression::ArrayLiteral(x) => x.to_str(),
             Expression::Prefix(x) => x.to_str(),
             Expression::Infix(x) => x.to_str(),
             Expression::If(x) => x.to_str(),
@@ -484,6 +495,38 @@ impl NodeTrait for Boolean {
     }
     fn token_literal(&self) -> String {
         self.to_string()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ArrayLiteral {
+    pub elements: Vec<Expression>,
+}
+impl ArrayLiteral {
+    pub fn new(elements: Vec<Expression>) -> Self {
+        Self { elements }
+    }
+}
+
+impl NodeTrait for ArrayLiteral {
+    fn node_type(&self) -> NodeType {
+        NodeType::ArrayLiteral
+    }
+    fn token_literal(&self) -> String {
+        "ARRAY".to_string()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("[");
+
+        let vec = self
+            .elements
+            .iter()
+            .map(|x| x.to_str())
+            .collect::<Vec<String>>();
+        str.push_str(&vec.join(", "));
+        str.push(']');
+
+        return str;
     }
 }
 

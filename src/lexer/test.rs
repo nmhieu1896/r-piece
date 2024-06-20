@@ -29,6 +29,7 @@ mod tests {
           "foobar"
           "foo bar"
           "far \" boo"
+          [1, 2]
         "#;
 
         let tokens = vec![
@@ -108,6 +109,11 @@ mod tests {
             TOKEN::STRING("foobar".to_string()),
             TOKEN::STRING("foo bar".to_string()),
             TOKEN::STRING("far \" boo".to_string()),
+            TOKEN::LBRACKET,
+            TOKEN::NUMBER(1),
+            TOKEN::COMMA,
+            TOKEN::NUMBER(2),
+            TOKEN::RBRACKET,
             TOKEN::EOF,
         ];
         let mut l = Lexer::new(input);

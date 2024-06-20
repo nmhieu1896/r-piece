@@ -20,6 +20,8 @@ pub enum CoerceErr {
     ToNum(String),
     #[error("To Bool Error: got {0:?}")]
     ToBool(String),
+    #[error("To Array Literal Error: got {0:?}")]
+    ToArrayLiteral(String),
     #[error("To Prefix Error: got {0:?}")]
     ToPrefix(String),
     #[error("To Infix Error: got {0:?}")]

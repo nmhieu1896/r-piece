@@ -57,6 +57,8 @@ impl<'a> Lexer<'a> {
             ')' => TOKEN::RPAREN,
             '{' => TOKEN::LBRACE,
             '}' => TOKEN::RBRACE,
+            '[' => TOKEN::LBRACKET,
+            ']' => TOKEN::RBRACKET,
             '"' => {
                 return TOKEN::STRING(self.read_str());
             }

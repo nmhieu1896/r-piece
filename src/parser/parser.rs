@@ -9,8 +9,9 @@ use std::collections::HashMap;
 use super::{
     parse_infix::{parse_call_expression, parse_infix_expression},
     parse_prefix::{
-        parse_boolean_literal, parse_function_literal, parse_group_expression, parse_identifier,
-        parse_if_expression, parse_int_literal, parse_prefix_expression, parse_string,
+        parse_array_literal, parse_boolean_literal, parse_function_literal, parse_group_expression,
+        parse_identifier, parse_if_expression, parse_int_literal, parse_prefix_expression,
+        parse_string,
     },
     parse_statement::parse_statement,
 };
@@ -77,6 +78,7 @@ impl<'a> Parser<'a> {
         p.register_prefix(TOKEN::BANG, parse_prefix_expression);
         p.register_prefix(TOKEN::MINUS, parse_prefix_expression);
         p.register_prefix(TOKEN::LPAREN, parse_group_expression);
+        p.register_prefix(TOKEN::LBRACKET, parse_array_literal);
         p.register_prefix(TOKEN::IF, parse_if_expression);
         p.register_prefix(TOKEN::FUNCTION, parse_function_literal);
         // INFIX PARSERS

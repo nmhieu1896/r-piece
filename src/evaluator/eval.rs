@@ -103,6 +103,15 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::String => return Ok(Object::String(node.to_expression()?.to_string_value()?)),
         NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),
         NodeType::Bool => return Ok(Object::Boolean(node.to_expression()?.to_bool()?)),
+        NodeType::ArrayLiteral => {
+            let expr = node.to_expression()?.to_array_literal()?;
+            let elements = expr
+                .elements
+                .iter()
+                .map(|x| eval(Node::Expression(x.clone()), Rc::clone(&env)))
+                .collect::<Result<Vec<Object>, EvalErr>>()?;
+            return Ok(Object::Array(Rc::new(RefCell::new(elements))));
+        }
     }
 }
 

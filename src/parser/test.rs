@@ -91,6 +91,31 @@ mod tests {
         assert_eq!(exp.to_str(), "5".to_string());
         assert_eq!(exp.expression.unwrap().to_num().unwrap(), 5);
     }
+
+    #[test]
+    fn test_array_literal() {
+        let tests = vec![
+            ("[1, 2, 3];", "[1, 2, 3]"),
+            ("[1, 2, 3, 4, 5];", "[1, 2, 3, 4, 5]"),
+            ("[1+2,3*5,[1,2*3]];", "[(1 + 2), (3 * 5), [1, (2 * 3)]]"),
+        ];
+
+        for &(input, expected) in tests.iter() {
+            let l = Lexer::new(input);
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap());
+                assert!(false);
+                return;
+            }
+            let p = program.unwrap();
+            println!("{:#?}", p);
+            let exp = p.statements[0].to_exp_stmt().unwrap();
+            assert_eq!(exp.to_str(), expected)
+        }
+    }
+
     #[test]
     fn test_prefix_expressions() {
         let inputs = vec![("!5;", "!", 5), ("-15;", "-", 15)];
@@ -147,20 +172,20 @@ mod tests {
     #[test]
     fn test_operator_precedence_parsing() {
         let tests = vec![
-            // ("-a * b", "((-a) * b)"),
-            // ("-a * 5", "((-a) * 5)"),
-            // ("-5 * a", "((-5) * a)"),
-            // ("!-a", "(!(-a))"),
-            // ("a + b + c", "((a + b) + c)"),
-            // ("a + b * c", "(a + (b * c))"),
-            // ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            ("-a * b", "((-a) * b)"),
+            ("-a * 5", "((-a) * 5)"),
+            ("-5 * a", "((-5) * a)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a + b) + c)"),
+            ("a + b * c", "(a + (b * c))"),
+            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
             // ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
-            // ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
-            // ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
-            // (
-            //     "3 + 4 * 5 == 3 * 1 + 4 * 5",
-            //     "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-            // ),
+            ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+            (
+                "3 + 4 * 5 == 3 * 1 + 4 * 5",
+                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            ),
             (
                 "3 + 4 * 5 == 3 * 1 + 4 * 5",
                 "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",

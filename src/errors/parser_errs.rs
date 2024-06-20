@@ -12,6 +12,8 @@ pub enum ParseErr {
     #[error("{0} ")]
     CoerceErr(#[from] CoerceErr),
     //
+    #[error("Array Error: Expected: {0} | got {1:?}")]
+    ARRAY(String, TOKEN),
     #[error("Let Error: Expected: {0} | got {1:?}")]
     LET(String, TOKEN),
     #[error("Infix Error: Expected: {0} | got {1:?}")]

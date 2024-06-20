@@ -1,7 +1,7 @@
 use crate::{
     ast::ast::{
-        BlockStatement, Expression, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
-        PrefixExpression, Statement,
+        ArrayLiteral, BlockStatement, Expression, ExpressionStatement, FunctionLiteral, Identifier,
+        IfExpression, PrefixExpression, Statement,
     },
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
@@ -33,6 +33,25 @@ pub fn parse_boolean_literal<'a>(parser: &mut Parser<'a>) -> Result<Expression, 
     Ok(Expression::Bool(
         parser.cur_token.literal().parse::<bool>().unwrap(),
     ))
+}
+
+pub fn parse_array_literal<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {
+    let mut elements: Vec<Expression> = Vec::new();
+    parser.next_token(); // move on from '['
+    loop {
+        elements.push(parse_expression(parser, Precedence::LOWEST)?);
+        parser.next_token();
+
+        if parser.cur_token.is_same_with(TOKEN::COMMA) {
+            parser.next_token();
+        } else if parser.cur_token.is_same_with(TOKEN::RBRACKET) {
+            break;
+        } else {
+            return Err(ParseErr::ARRAY("] or ,".into(), parser.cur_token.clone()));
+        }
+    }
+
+    return Ok(Expression::ArrayLiteral(ArrayLiteral::new(elements)));
 }
 
 pub fn parse_prefix_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {

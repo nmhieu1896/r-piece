@@ -15,6 +15,7 @@ pub enum Object<'a> {
     String(String),
     Builtin(String), // get function from builtin
     Boolean(bool),
+    Array(Rc<RefCell<Vec<Object<'a>>>>),
     Null,
     Return(Box<Object<'a>>),
     Function(Function<'a>),
