@@ -15,6 +15,7 @@ pub enum NodeType {
     InfixExpression,
     IfExpression,
     CallExpression,
+    IndexExpression,
     //
     Identifier,
     String,
@@ -77,11 +78,12 @@ pub enum Expression {
     Number(Number),
     Bool(Boolean),
     ArrayLiteral(ArrayLiteral),
+    Index(Box<IndexExpression>),
     Prefix(Box<PrefixExpression>),
     Infix(Box<InfixExpression>),
     If(Box<IfExpression>),
-    Call(Box<CallExpression>),
     Function(Box<FunctionLiteral>),
+    Call(Box<CallExpression>),
 }
 impl Expression {
     pub fn to_ident(&self) -> Result<Identifier, CoerceErr> {
@@ -112,6 +114,12 @@ impl Expression {
         match self {
             Expression::ArrayLiteral(x) => Ok(x.clone()),
             anything => Err(CoerceErr::ToArrayLiteral(anything.token_literal())),
+        }
+    }
+    pub fn to_index(&self) -> Result<IndexExpression, CoerceErr> {
+        match self {
+            Expression::Index(x) => Ok(x.as_ref().clone()),
+            anything => Err(CoerceErr::ToCall(anything.token_literal())),
         }
     }
     pub fn to_prefix(&self) -> Result<PrefixExpression, CoerceErr> {
@@ -153,6 +161,7 @@ impl NodeTrait for Expression {
             Expression::Number(_) => NodeType::Number,
             Expression::Bool(_) => NodeType::Bool,
             Expression::ArrayLiteral(_) => NodeType::ArrayLiteral,
+            Expression::Index(_) => NodeType::IndexExpression,
             Expression::Prefix(_) => NodeType::PrefixExpression,
             Expression::Infix(_) => NodeType::InfixExpression,
             Expression::If(_) => NodeType::IfExpression,
@@ -167,6 +176,7 @@ impl NodeTrait for Expression {
             Expression::Number(x) => x.token_literal(),
             Expression::Bool(x) => x.token_literal(),
             Expression::ArrayLiteral(x) => x.token_literal(),
+            Expression::Index(x) => x.token_literal(),
             Expression::Prefix(x) => x.token_literal(),
             Expression::Infix(x) => x.token_literal(),
             Expression::If(x) => x.token_literal(),
@@ -181,6 +191,7 @@ impl NodeTrait for Expression {
             Expression::Number(x) => x.to_str(),
             Expression::Bool(x) => x.to_str(),
             Expression::ArrayLiteral(x) => x.to_str(),
+            Expression::Index(x) => x.to_str(),
             Expression::Prefix(x) => x.to_str(),
             Expression::Infix(x) => x.to_str(),
             Expression::If(x) => x.to_str(),
@@ -427,16 +438,7 @@ impl NodeTrait for BlockStatement {
     fn to_str(&self) -> String {
         let mut str = String::from("");
         str.push_str("{");
-
-        str.push_str(
-            &self
-                .statements
-                .iter()
-                .map(|x| x.to_str())
-                .collect::<Vec<String>>()
-                .join(" "),
-        );
-        // str.push_str(&stringnify_stmt(&self.statements));
+        str.push_str(&stringnify_stmt(&self.statements));
         str.push_str("}");
 
         return str;
@@ -707,12 +709,39 @@ impl NodeTrait for CallExpression {
         return str;
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct IndexExpression {
+    pub left: Expression,
+    pub index: Expression,
+}
+impl IndexExpression {
+    pub fn new(left: Expression, index: Expression) -> Self {
+        Self { left, index }
+    }
+}
+impl NodeTrait for IndexExpression {
+    fn node_type(&self) -> NodeType {
+        NodeType::IndexExpression
+    }
+    fn token_literal(&self) -> String {
+        "ARRAY_INDEX".to_string()
+    }
+    fn to_str(&self) -> String {
+        let mut str = String::from("");
+        str.push_str(&self.left.to_str());
+        str.push('[');
+        str.push_str(&self.index.to_str());
+        str.push(']');
+        return str;
+    }
+}
 // -------------- EXPRESSION TYPE ----------------------
 
 pub fn stringnify_stmt(stmts: &Vec<Statement>) -> String {
-    let mut str = String::new();
-    for stmt in stmts.iter() {
-        str.push_str(&stmt.to_str())
-    }
-    return str;
+    return stmts
+        .iter()
+        .map(|x| x.to_str())
+        .collect::<Vec<String>>()
+        .join(" ");
 }

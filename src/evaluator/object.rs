@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     ast::ast::{BlockStatement, Identifier},
+    errors::eval_errs::EvalErr,
     // errors::coerce_errs::CoerceErr,
 };
 
@@ -22,6 +23,16 @@ pub enum Object<'a> {
 }
 
 impl<'a> Object<'a> {
+    pub fn to_num(&self) -> Result<i64, EvalErr> {
+        match self {
+            Object::Number(n) => Ok(*n),
+            anything => Err(EvalErr::CoerceObject(
+                anything.to_string(),
+                "number".to_string(),
+            )),
+        }
+    }
+
     pub fn to_string(&self) -> String {
         format!("{:?}", self)
     }

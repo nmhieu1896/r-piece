@@ -37,7 +37,12 @@ pub enum EvalErr {
     //
     #[error("Variable {0} is already initialized")]
     AlreadyInitialized(String),
-
+    //
+    #[error("Indexing is only supported for array, got {0:?}")]
+    IndexArray(String),
+    //
+    #[error("Object mismatch, expected {0}, got {1}")]
+    CoerceObject(String, String),
     //builtin
     #[error("len only takes one argument")]
     LenArgsCount,

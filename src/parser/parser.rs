@@ -7,7 +7,7 @@ use crate::{
 use std::collections::HashMap;
 
 use super::{
-    parse_infix::{parse_call_expression, parse_infix_expression},
+    parse_infix::{parse_arr_index_expression, parse_call_expression, parse_infix_expression},
     parse_prefix::{
         parse_array_literal, parse_boolean_literal, parse_function_literal, parse_group_expression,
         parse_identifier, parse_if_expression, parse_int_literal, parse_prefix_expression,
@@ -25,6 +25,7 @@ pub enum Precedence {
     SUM,
     PRODUCT,
     PREFIX,
+    INDEX,
     CALL,
 }
 impl Precedence {
@@ -34,6 +35,7 @@ impl Precedence {
             TOKEN::LT | TOKEN::GT => Self::LESSGREATER,
             TOKEN::PLUS | TOKEN::MINUS => Self::SUM,
             TOKEN::SLASH | TOKEN::ASTERISK => Self::PRODUCT,
+            TOKEN::LBRACKET => Self::INDEX,
             TOKEN::LPAREN => Self::CALL,
             _ => Self::LOWEST,
         }
@@ -46,7 +48,8 @@ impl Precedence {
             Precedence::SUM => 4,
             Precedence::PRODUCT => 5,
             Precedence::PREFIX => 6,
-            Precedence::CALL => 7,
+            Precedence::INDEX => 7,
+            Precedence::CALL => 8,
         }
     }
 }
@@ -91,6 +94,7 @@ impl<'a> Parser<'a> {
         p.register_infix(TOKEN::LT, parse_infix_expression);
         p.register_infix(TOKEN::GT, parse_infix_expression);
         p.register_infix(TOKEN::LPAREN, parse_call_expression);
+        p.register_infix(TOKEN::LBRACKET, parse_arr_index_expression);
         //Read two token so current token and peek token are both set
         p.next_token();
         p.next_token();

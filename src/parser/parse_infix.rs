@@ -1,5 +1,5 @@
 use crate::{
-    ast::ast::{CallExpression, Expression, InfixExpression},
+    ast::ast::{CallExpression, Expression, IndexExpression, InfixExpression},
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
 };
@@ -48,4 +48,22 @@ pub fn parse_call_args<'a>(parser: &mut Parser<'a>) -> Result<Vec<Expression>, P
     }
 
     return Ok(args);
+}
+
+pub fn parse_arr_index_expression<'a>(
+    parser: &mut Parser<'a>,
+    left: Expression,
+) -> Result<Expression, ParseErr> {
+    println!("why ? {:?}", parser.cur_token);
+    parser.next_token(); // move on from '['
+
+    let index_exp = parse_expression(parser, Precedence::LOWEST)?;
+    parser.next_token(); // move to ']'
+    if !parser.cur_token.is_same_with(TOKEN::RBRACKET) {
+        return Err(ParseErr::INDEX("RPAREN".into(), parser.cur_token.clone()));
+    }
+
+    Ok(Expression::Index(Box::new(IndexExpression::new(
+        left, index_exp,
+    ))))
 }

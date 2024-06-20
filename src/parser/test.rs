@@ -115,6 +115,39 @@ mod tests {
             assert_eq!(exp.to_str(), expected)
         }
     }
+    #[test]
+    fn test_array_index() {
+        let tests = vec![
+            ("[1, 2, 3][0];", "[1, 2, 3][0]"),
+            ("[1, 2, 3, 4, 5][1];", "[1, 2, 3, 4, 5][1]"),
+            ("my_array[0];", "my_array[0]"),
+            (
+                "[1+2,3*5,[1,2*3]][0];",
+                "[(1 + 2), (3 * 5), [1, (2 * 3)]][0]",
+            ),
+        ];
+
+        for &(input, expected) in tests.iter() {
+            let l = Lexer::new(input);
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            if program.is_err() {
+                println!("{:?}", program.err().unwrap().to_string());
+                assert!(false);
+                return;
+            }
+            let p = program.unwrap();
+            println!("{:#?}", p);
+            let exp = p.statements[0]
+                .to_exp_stmt()
+                .unwrap()
+                .expression
+                .unwrap()
+                .to_index()
+                .unwrap();
+            assert_eq!(exp.to_str(), expected)
+        }
+    }
 
     #[test]
     fn test_prefix_expressions() {

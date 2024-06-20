@@ -296,4 +296,28 @@ mod tests {
             assert_eq!(obj, expected);
         }
     }
+
+    #[test]
+    fn test_array_index() {
+        let tests = vec![
+            ("[1, 2, 3][0]", Object::Number(1)),
+            ("[1, 2, 3, 4, 5][1]", Object::Number(2)),
+            ("let my_array = [0,2,3];my_array[0]", Object::Number(0)),
+            ("[1+2,3*5,[1,2*3]][0]", Object::Number(3)),
+            (
+                r#"
+                let a = 10;
+                let b = 20;
+                let func = fn(x) { return [x, x*a, x*b] };
+                let c = func(2);
+                c[0] + c[1] + c[2]
+            "#,
+                Object::Number(62),
+            ),
+        ];
+        for (input, expected) in tests.into_iter() {
+            let obj = test_eval(input).unwrap();
+            assert_eq!(obj, expected);
+        }
+    }
 }

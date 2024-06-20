@@ -20,6 +20,8 @@ pub enum ParseErr {
     INFIX(String, TOKEN),
     #[error("Call Error: Expected: {0} | got {1:?}")]
     CALL(String, TOKEN),
+    #[error("ArrayIndex Error: Expected: {0} | got {1:?}")]
+    INDEX(String, TOKEN),
     #[error("Group Error: Expected: {0} | got {1:?}")]
     GROUP(String, TOKEN),
     #[error("If Error: Expected: {0} | got {1:?}")]
