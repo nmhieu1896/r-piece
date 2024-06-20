@@ -1,9 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    ast::ast::{BlockStatement, Identifier},
+    ast::ast::{BlockStatement, Identifier, NodeTrait},
     errors::eval_errs::EvalErr,
-    // errors::coerce_errs::CoerceErr,
 };
 
 use super::environment::Environment;
@@ -34,7 +33,42 @@ impl<'a> Object<'a> {
     }
 
     pub fn to_string(&self) -> String {
-        format!("{:?}", self)
+        match self {
+            Object::String(s) => s.clone(),
+            Object::Number(n) => n.to_string(),
+            Object::Identifier(i) => i.0.clone(),
+            Object::Boolean(b) => b.to_string(),
+            Object::Array(a) => {
+                let mut str = String::from("[");
+                str.push_str(
+                    &a.as_ref()
+                        .borrow()
+                        .clone()
+                        .iter()
+                        .map(|x| x.to_string())
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                );
+                str.push(']');
+                return str;
+            }
+            Object::Null => "Null".to_string(),
+            Object::Return(r) => r.to_string(),
+            Object::Function(f) => {
+                let mut str = String::from("fn (");
+                str.push_str(
+                    &f.params
+                        .iter()
+                        .map(|x| x.0.clone())
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                );
+                str.push(')');
+                str.push_str(&f.body.clone().to_str());
+                return str;
+            }
+            Object::Builtin(s) => format!("builtins({})", s),
+        }
     }
 
     pub fn is_return(&self) -> bool {

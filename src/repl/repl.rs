@@ -47,7 +47,10 @@ pub fn run_repl() {
         if x.is_err() {
             println!("{:?}", x.unwrap_err().to_string());
         } else {
-            println!("{:?}", x.unwrap());
+            let str = x.unwrap().to_string();
+            if str != "Null" {
+                println!("{}", str);
+            }
         }
     }
 
