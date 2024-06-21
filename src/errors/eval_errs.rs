@@ -35,11 +35,17 @@ pub enum EvalErr {
     Equal(String, String),
 
     //
+    #[error("Assign Error: {0} cant be on the left hand side of an assignment")]
+    AssignLHS(String),
+
+    //
     #[error("Variable {0} is already initialized")]
     AlreadyInitialized(String),
     //
     #[error("Indexing is only supported for array, got {0}")]
     IndexArray(String),
+    #[error("Index out of bounds, index {0} is out of bounds for array of size {1}")]
+    IndexOutOfBounds(i64, usize),
     //
     #[error("Object mismatch, expected {0}, got {1}")]
     CoerceObject(String, String),

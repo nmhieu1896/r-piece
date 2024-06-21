@@ -68,7 +68,31 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::ReassignStatement => {
             let expr = node.to_statement()?.to_reassign()?;
             let value = eval(Node::Expression(expr.value), Rc::clone(&env))?;
-            env.borrow_mut().reassign(&expr.name.0, value)?;
+            match expr.lhs {
+                Expression::Identifier(identifier) => {
+                    env.borrow_mut().reassign(&identifier.0, value)?;
+                }
+                Expression::Index(index) => {
+                    let ident = index.left.to_ident()?;
+                    let idx = eval(Node::Expression(index.index), Rc::clone(&env))?.to_num()?;
+                    if idx < 0 {
+                        return Err(EvalErr::IndexOutOfBounds(-1, 0));
+                    }
+
+                    let arr = env
+                        .borrow()
+                        .get(&ident.0)?
+                        .to_arr(EvalErr::IndexArray(ident.0.clone()))?;
+                    // check if index is out of bounds
+                    if arr.as_ref().borrow().len() <= (idx as usize) {
+                        return Err(EvalErr::IndexOutOfBounds(idx, arr.as_ref().borrow().len()));
+                    }
+                    // update the value
+                    arr.as_ref().borrow_mut()[idx as usize] = value;
+                }
+                any => return Err(EvalErr::AssignLHS(any.to_str())),
+            }
+
             return Ok(Object::Null);
         }
         NodeType::FunctionLiteral => {
@@ -106,6 +130,9 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
             // parse left to array, and index to number
             let arr = left.to_arr(EvalErr::IndexArray(left.to_string()))?;
             let index = eval(Node::Expression(expr.index), Rc::clone(&env))?.to_num()?;
+            if index < 0 {
+                return Err(EvalErr::IndexOutOfBounds(-1, 0));
+            }
             return Ok(arr.as_ref().borrow().get(index as usize).unwrap().clone());
         }
         NodeType::String => return Ok(Object::String(node.to_expression()?.to_string_value()?)),

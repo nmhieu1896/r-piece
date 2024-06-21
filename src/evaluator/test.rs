@@ -195,6 +195,11 @@ mod tests {
                 "let a = 5; fn(newA) {a = newA}(100); a",
                 Object::Number(100),
             ),
+            ("let a=[1,2,3,4]; a[0] = 100; a[0]", Object::Number(100)),
+            (
+                "let a=[1,2,3,4]; a[1] = 100; pop_left(a); a[0]",
+                Object::Number(100),
+            ),
         ];
         for (input, expected) in test.into_iter() {
             let obj = test_eval(input).unwrap();

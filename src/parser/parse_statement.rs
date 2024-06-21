@@ -1,7 +1,7 @@
 use crate::{
     ast::ast::{
-        ExpressionStatement, Identifier, LetStatement, ReassignStatement, ReturnStatement,
-        Statement,
+        Expression, ExpressionStatement, Identifier, LetStatement, ReassignStatement,
+        ReturnStatement, Statement,
     },
     errors::parser_errs::ParseErr,
     lexer::token::TOKEN,
@@ -17,7 +17,16 @@ pub fn parse_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseEr
         TOKEN::LET => parse_let_statement(parser),
         TOKEN::RETURN => parse_return_statement(parser),
         TOKEN::IDENT(_) if parser.peek_token == TOKEN::ASSIGN => parse_reassign_statement(parser),
-        _ => Ok(parse_expression_statement(parser)?),
+        _ => {
+            let stmt = parse_expression_statement(parser)?;
+            match parser.peek_token {
+                TOKEN::ASSIGN => {
+                    let idx_infix = Box::new(stmt.to_exp_stmt()?.expression.unwrap().to_index()?);
+                    parse_reassign_exp_statement(parser, Expression::Index(idx_infix))
+                }
+                _ => Ok(stmt),
+            }
+        }
     }
 }
 
@@ -47,13 +56,23 @@ pub fn parse_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, Par
     return Ok(Statement::Let(stmt));
 }
 
+pub fn parse_reassign_exp_statement<'a>(
+    parser: &mut Parser<'a>,
+    lhs: Expression,
+) -> Result<Statement, ParseErr> {
+    parser.next_token(); //to assign token
+    parser.next_token(); //to expression
+    let value = parse_expression(parser, Precedence::LOWEST)?;
+    let stmt = ReassignStatement::new(lhs, value);
+    return Ok(Statement::Reassign(stmt));
+}
 pub fn parse_reassign_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement, ParseErr> {
     let name = parser.cur_token.literal();
     //Dont need to check error because match case in parse_statement've already done it
     parser.next_token(); //to assign token
     parser.next_token(); //to expression
     let value = parse_expression(parser, Precedence::LOWEST)?;
-    let stmt = ReassignStatement::new(Identifier(name), value);
+    let stmt = ReassignStatement::new(Expression::Identifier(Identifier(name)), value);
     return Ok(Statement::Reassign(stmt));
 }
 

@@ -333,12 +333,12 @@ impl NodeTrait for LetStatement {
 }
 #[derive(Debug, Clone)]
 pub struct ReassignStatement {
-    pub name: Identifier, // if name is IDENT(string) => Some(String) else None
+    pub lhs: Expression, // if name is IDENT(string) => Some(String) else None
     pub value: Expression,
 }
 impl ReassignStatement {
-    pub fn new(name: Identifier, value: Expression) -> Self {
-        Self { name, value }
+    pub fn new(lhs: Expression, value: Expression) -> Self {
+        Self { lhs, value }
     }
 }
 
@@ -351,7 +351,7 @@ impl NodeTrait for ReassignStatement {
     }
     fn to_str(&self) -> String {
         let mut str = String::from("let ");
-        str.push_str(&self.name.0.clone());
+        str.push_str(&self.lhs.to_str());
         str.push_str(" = ");
         str.push_str(&self.value.to_str());
         str.push_str(";");
