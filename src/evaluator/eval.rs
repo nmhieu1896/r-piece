@@ -103,13 +103,10 @@ pub fn eval<'a>(node: Node, env: Rc<RefCell<Environment<'a>>>) -> Result<Object<
         NodeType::IndexExpression => {
             let expr = node.to_expression()?.to_index()?;
             let left = eval(Node::Expression(expr.left), Rc::clone(&env))?;
-            match left {
-                Object::Array(arr) => {
-                    let index = eval(Node::Expression(expr.index), Rc::clone(&env))?.to_num()?;
-                    return Ok(arr.as_ref().borrow().get(index as usize).unwrap().clone());
-                }
-                _ => return Err(EvalErr::IndexArray(left.to_string())),
-            }
+            // parse left to array, and index to number
+            let arr = left.to_arr(EvalErr::IndexArray(left.to_string()))?;
+            let index = eval(Node::Expression(expr.index), Rc::clone(&env))?.to_num()?;
+            return Ok(arr.as_ref().borrow().get(index as usize).unwrap().clone());
         }
         NodeType::String => return Ok(Object::String(node.to_expression()?.to_string_value()?)),
         NodeType::Number => return Ok(Object::Number(node.to_expression()?.to_num()?)),

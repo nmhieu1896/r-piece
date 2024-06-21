@@ -32,6 +32,13 @@ impl<'a> Object<'a> {
         }
     }
 
+    pub fn to_arr(&self, err: EvalErr) -> Result<Rc<RefCell<Vec<Object<'a>>>>, EvalErr> {
+        match self {
+            Object::Array(a) => Ok(a.clone()),
+            _ => Err(err),
+        }
+    }
+
     pub fn to_string(&self) -> String {
         match self {
             Object::String(s) => s.clone(),
