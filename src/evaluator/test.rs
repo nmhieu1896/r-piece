@@ -16,7 +16,7 @@ mod tests {
         let mut p = Parser::new(l);
         let program = p.parse_program()?;
         let env = Rc::new(RefCell::new(Environment::new()));
-        println!("{:#?}", program);
+        // println!("{:#?}", program);
         return eval(
             Node::Statement(Statement::Program(program)),
             Rc::clone(&env),
@@ -359,6 +359,97 @@ mod tests {
                 Object::Number(62),
             ),
         ];
+        for (input, expected) in tests.into_iter() {
+            let obj = test_eval(input).unwrap();
+            assert_eq!(obj, expected);
+        }
+    }
+
+    #[test]
+    fn test_extended_functions() {
+        let tests = vec![
+            (
+                //Build a reduce function
+                r#"
+                let reduce = fn(arr,initial, func) { 
+                    let iter = fn(arr,result) {
+                        if (len(arr) == 0) {
+                            return result;
+                        } else {
+                            let el = pop(arr);
+                            return iter(arr, func(result, el));
+                        }
+                    };
+                    iter(arr, initial);
+                };
+                let sum = fn(arr) {
+                    reduce(arr, 0, fn(init,el) { return init + el })
+                };
+                sum([1,2,3,4])
+            "#,
+                Object::Number(10),
+            ),
+            (
+                //Build a map function
+                r#"
+                let map = fn(arr, func) {
+                    let iter = fn(arr, result) {
+                        if (len(arr) == 0) {
+                            return result;
+                        } else {
+                            let el = pop_left(arr);
+                            push(result, func(el));
+                            return iter(arr, result);
+                        }
+                    };
+                    iter(arr, []);
+                };
+                let double = fn(x) { return x * 2 };
+                map([1,2,3,4], double)
+            "#,
+                Object::Array(Rc::new(RefCell::new(vec![
+                    Object::Number(2),
+                    Object::Number(4),
+                    Object::Number(6),
+                    Object::Number(8),
+                ]))),
+            ),
+            (
+                //Build a reduce function
+                r#"
+                let reduce = fn(arr,initial, func) { 
+                    let iter = fn(arr,result) {
+                        if (len(arr) == 0) {
+                            return result;
+                        } else {
+                            let el = pop(arr);
+                            return iter(arr, func(result, el));
+                        }
+                    };
+                    iter(arr, initial);
+                };
+                let map = fn(arr, func) {
+                    let iter = fn(arr, result) {
+                        if (len(arr) == 0) {
+                            return result;
+                        } else {
+                            let el = pop_left(arr);
+                            push(result, func(el));
+                            return iter(arr, result);
+                        }
+                    };
+                    iter(arr, []);
+                };
+                let sum = fn(arr) {
+                    reduce(arr, 0, fn(init,el) { return init + el })
+                };
+                let double = fn(x) { return x * 2 };
+                sum(map([1,2,3,4], double))
+            "#,
+                Object::Number(20),
+            ),
+        ];
+
         for (input, expected) in tests.into_iter() {
             let obj = test_eval(input).unwrap();
             assert_eq!(obj, expected);
