@@ -4,15 +4,16 @@ use std::{
     rc::Rc,
 };
 
-use crate::evaluator::environment::Environment;
 #[allow(unused)]
 use crate::{ast::ast::stringnify_stmt, lexer::lexer::Lexer, parser::parser::Parser};
 use crate::{
     ast::ast::{Node, Statement},
     evaluator::eval::eval,
 };
+use crate::{defer, evaluator::environment::Environment};
 
 pub fn run_repl() {
+    defer!(println!("Exit REPL!"));
     println!("Welcome to the REPL CLI. Type 'exit' to quit.");
     let env = Rc::new(RefCell::new(Environment::new()));
 
@@ -53,6 +54,4 @@ pub fn run_repl() {
             }
         }
     }
-
-    println!("Exit REPL!");
 }

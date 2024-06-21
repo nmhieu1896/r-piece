@@ -65,6 +65,11 @@ static POP_LEFT: for<'a> fn(&Vec<Object<'a>>) -> Result<Object<'a>, EvalErr> = |
         return Ok(arr.borrow_mut().remove(0));
     }
 };
+static PRINT: for<'a> fn(&Vec<Object<'a>>) -> Result<Object<'a>, EvalErr> = |arg| {
+    arg.iter()
+        .for_each(|x| print!("{} \n", x.clone().to_string()));
+    Ok(Object::Null)
+};
 
 pub static BUILTINS: Lazy<
     HashMap<&'static str, for<'a> fn(&Vec<Object<'a>>) -> Result<Object<'a>, EvalErr>>,
@@ -74,5 +79,6 @@ pub static BUILTINS: Lazy<
     m.insert("pop", POP);
     m.insert("pop_left", POP_LEFT);
     m.insert("push", PUSH);
+    m.insert("print", PRINT);
     m
 });

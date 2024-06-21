@@ -106,10 +106,21 @@ impl<'a> Lexer<'a> {
             if self.ch == '\0' {
                 panic!("EOF for string lexing");
             }
+
+            // \n should considered as new line
+            if self.ch == '\\' && self.read_peek() == 'n' {
+                self.read_char();
+                self.read_char();
+                str.push('\n');
+                continue;
+            }
+
+            // \ should be considered as escape character
             if self.ch == '\\' {
                 self.read_char();
             }
             str.push(self.ch);
+
             self.read_char();
         }
         self.read_char();
