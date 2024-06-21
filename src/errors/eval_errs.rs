@@ -44,10 +44,10 @@ pub enum EvalErr {
     #[error("Object mismatch, expected {0}, got {1}")]
     CoerceObject(String, String),
     //builtin
-    #[error("len only takes one argument")]
-    LenArgsCount,
-    #[error("len only takes string and array")]
-    LenArgsType,
+    #[error("Expect {0} arguments, got {1}")]
+    ArgsCount(usize, usize),
+    #[error("Builtin({0}) expects {1} arguments, got {2}")]
+    BuiltinArgsType(String, String, String),
 }
 
 impl EvalErr {

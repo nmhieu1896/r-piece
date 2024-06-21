@@ -38,6 +38,10 @@ pub fn parse_boolean_literal<'a>(parser: &mut Parser<'a>) -> Result<Expression, 
 pub fn parse_array_literal<'a>(parser: &mut Parser<'a>) -> Result<Expression, ParseErr> {
     let mut elements: Vec<Expression> = Vec::new();
     parser.next_token(); // move on from '['
+    if parser.cur_token.is_same_with(TOKEN::RBRACKET) {
+        return Ok(Expression::ArrayLiteral(ArrayLiteral::new(elements)));
+    }
+
     loop {
         elements.push(parse_expression(parser, Precedence::LOWEST)?);
         parser.next_token();

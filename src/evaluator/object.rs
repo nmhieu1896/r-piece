@@ -22,6 +22,20 @@ pub enum Object<'a> {
 }
 
 impl<'a> Object<'a> {
+    pub fn get_type(&self) -> String {
+        match self {
+            Object::Number(_) => "Number".into(),
+            Object::Identifier(_) => "Identifier".into(),
+            Object::String(_) => "String".into(),
+            Object::Boolean(_) => "Boolean".into(),
+            Object::Array(_) => "Array".into(),
+            Object::Null => "Null".into(),
+            Object::Return(_) => "Return".into(),
+            Object::Function(_) => "Function".into(),
+            Object::Builtin(_) => "Builtin".into(),
+        }
+    }
+
     pub fn to_num(&self) -> Result<i64, EvalErr> {
         match self {
             Object::Number(n) => Ok(*n),

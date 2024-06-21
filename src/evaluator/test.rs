@@ -14,7 +14,7 @@ mod tests {
     fn test_eval(input: &str) -> Result<Object, EvalErr> {
         let l = Lexer::new(input);
         let mut p = Parser::new(l);
-        let program = p.parse_program().unwrap();
+        let program = p.parse_program()?;
         let env = Rc::new(RefCell::new(Environment::new()));
         println!("{:#?}", program);
         return eval(
@@ -290,10 +290,49 @@ mod tests {
             (r#"len("")"#, Object::Number(0)),
             (r#"len("hello")"#, Object::Number(5)),
             (r#"len("hello world")"#, Object::Number(11)),
+            (r#"len([1,2,"HelloWorld"])"#, Object::Number(3)),
+            (r#"len([fn(x){x*2},[3,2,1]])"#, Object::Number(2)),
+            ("let x=[]; pop(x)", Object::Null),
+            (
+                r#"
+                let x = [1,2,3,4,5];
+                pop(x);
+            "#,
+                Object::Number(5),
+            ),
+            (
+                r#"
+                let x = [1,2,3,4,5];
+                pop_left(x);
+            "#,
+                Object::Number(1),
+            ),
+            (
+                r#"
+                let x = [1,2,3,4,5];
+                pop_left(x);
+                pop(x);
+                x
+            "#,
+                Object::Array(Rc::new(RefCell::new(vec![
+                    Object::Number(2),
+                    Object::Number(3),
+                    Object::Number(4),
+                ]))),
+            ),
+            (
+                r#"
+                let x = [];
+                push(x, 3);
+                x
+                pop(x);
+            "#,
+                Object::Number(3),
+            ),
         ];
         for (input, expected) in tests.into_iter() {
-            let obj = test_eval(input).unwrap();
-            assert_eq!(obj, expected);
+            let obj = test_eval(input);
+            assert_eq!(obj.unwrap(), expected);
         }
     }
 
