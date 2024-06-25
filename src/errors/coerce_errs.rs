@@ -12,38 +12,38 @@ pub enum CoerceErr {
     #[error("To Statement Error: Expected: Statement | got {0}")]
     ToStatement(String),
     // Parse Expression
-    #[error("To Ident Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Ident ")]
     ToIdent(String),
-    #[error("To String Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to String ")]
     ToString(String),
-    #[error("To Number Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Number ")]
     ToNum(String),
-    #[error("To Bool Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Bool ")]
     ToBool(String),
-    #[error("To Array Literal Error: got {0}")]
+    #[error("Literal Erro got  Cant be coerce to Array {0}")]
     ToArrayLiteral(String),
-    #[error("To Prefix Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Prefix ")]
     ToPrefix(String),
-    #[error("To Infix Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Infix ")]
     ToInfix(String),
-    #[error("To Call Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Call ")]
     ToCall(String),
-    #[error("To If Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to If ")]
     ToIf(String),
-    #[error("To Function Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Function ")]
     ToFunction(String),
     // Parse Statement
-    #[error("To Let Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Let ")]
     ToLet(String),
-    #[error("To Reassign Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Reassign ")]
     ToReassign(String),
-    #[error("To Return Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Return ")]
     ToReturn(String),
-    #[error("To Expression Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Expression ")]
     ToExpStmt(String),
-    #[error("To Program Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Program ")]
     ToProgram(String),
-    #[error("To Block Error: got {0}")]
+    #[error("Error: {0} Cant be coerce to Block ")]
     ToBlock(String),
 }
 
